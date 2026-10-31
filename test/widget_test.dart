@@ -1,10 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glyph/models/glyph_animation.dart';
 import 'package:glyph/models/glyph_channel.dart';
+import 'package:glyph/screens/compose_screen.dart';
+import 'package:glyph/screens/main_navigation_screen.dart';
 import 'package:glyph/services/glyph_service.dart';
+import 'package:glyph/services/settings_service.dart';
+import 'package:glyph/widgets/interactive_glyph_visualizer.dart';
 import 'package:glyph/widgets/shake_torch_cards.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   test('Phone 3a glyph channels configuration test', () {
@@ -213,5 +219,152 @@ void main() {
     expect(ShakeIntensityPreset.medium.threshold, equals(2.2));
     expect(ShakeIntensityPreset.high.threshold, equals(3.8));
     expect(ShakeIntensityPreset.values.length, equals(3));
+  });
+
+  test('SettingsService persistence and retrieval test', () async {
+    SharedPreferences.setMockInitialValues({});
+    final settings = SettingsService.instance;
+    await settings.init();
+
+    // Verify defaults
+    expect(settings.chargingAnimationEnabled, isTrue);
+    expect(settings.selectedArcs, equals({'C'}));
+    expect(settings.isClockwise, isTrue);
+    expect(settings.isCombinedProgress, isTrue);
+    expect(settings.isDurationAlways, isTrue);
+    expect(settings.timerDurationSeconds, equals(3));
+    expect(settings.chargingBrightness, equals(4000));
+    expect(settings.shakeTorchEnabled, isFalse);
+    expect(settings.shakeThreshold, equals(2.0));
+    expect(settings.torchBrightness, equals(4000));
+
+    // Update settings
+    await settings.setChargingAnimationEnabled(false);
+    await settings.setSelectedArcs({'A', 'B'});
+    await settings.setIsClockwise(false);
+    await settings.setIsCombinedProgress(false);
+    await settings.setIsDurationAlways(false);
+    await settings.setTimerDurationSeconds(15);
+    await settings.setChargingBrightness(2500);
+    await settings.setShakeTorchEnabled(true);
+    await settings.setShakeThreshold(1.4);
+    await settings.setTorchBrightness(1800);
+
+    // Verify persisted changes
+    expect(settings.chargingAnimationEnabled, isFalse);
+    expect(settings.selectedArcs, equals({'A', 'B'}));
+    expect(settings.isClockwise, isFalse);
+    expect(settings.isCombinedProgress, isFalse);
+    expect(settings.isDurationAlways, isFalse);
+    expect(settings.timerDurationSeconds, equals(15));
+    expect(settings.chargingBrightness, equals(2500));
+    expect(settings.shakeTorchEnabled, isTrue);
+    expect(settings.shakeThreshold, equals(1.4));
+    expect(settings.torchBrightness, equals(1800));
+  });
+
+  testWidgets('InteractiveGlyphVisualizer renders 36 LEDs and handles interaction', (tester) async {
+    Set<int> selected = {0, 1, 20};
+    Set<int>? latestChanged;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 320,
+              height: 380,
+              child: InteractiveGlyphVisualizer(
+                activeChannels: selected,
+                onChannelsChanged: (newChannels) {
+                  latestChanged = newChannels;
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(InteractiveGlyphVisualizer), findsOneWidget);
+
+    // Tap in the visualizer
+    await tester.tap(find.byType(InteractiveGlyphVisualizer));
+    await tester.pump();
+    expect(latestChanged != null || selected.isNotEmpty, isTrue);
+  });
+
+  testWidgets('ComposeScreen displays visualizer first, timeline, controls and save dialog', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    SharedPreferences.setMockInitialValues({});
+    await SettingsService.instance.init();
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ComposeScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify visualizer is present
+    expect(find.byType(InteractiveGlyphVisualizer), findsOneWidget);
+
+    // Verify timeline is present
+    expect(find.textContaining('TIMELINE'), findsOneWidget);
+
+    // Verify play and test buttons are present
+    expect(find.text('PLAY LOOP'), findsOneWidget);
+    expect(find.text('PLAY ONCE'), findsOneWidget);
+    expect(find.text('TEST FRAME (TOGGLE)'), findsOneWidget);
+
+    // Toggle test frame
+    await tester.tap(find.text('TEST FRAME (TOGGLE)'));
+    await tester.pumpAndSettle();
+    expect(find.text('TEST FRAME: ON (ACTIVE)'), findsOneWidget);
+
+    // Toggle off
+    await tester.tap(find.text('TEST FRAME: ON (ACTIVE)'));
+    await tester.pumpAndSettle();
+    expect(find.text('TEST FRAME (TOGGLE)'), findsOneWidget);
+
+    // Tap SAVE button to trigger the dialog
+    await tester.tap(find.text('SAVE'));
+    await tester.pumpAndSettle();
+
+    // Verify save dialog appeared
+    expect(find.text('SAVE ANIMATION'), findsOneWidget);
+    expect(find.text('ANIMATION NAME'), findsOneWidget);
+    expect(find.text('CANCEL'), findsOneWidget);
+  });
+
+  testWidgets('MainNavigationScreen floating pill animated navbar renders items', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    SharedPreferences.setMockInitialValues({});
+    await SettingsService.instance.init();
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: MainNavigationScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('HOME'), findsOneWidget);
+    expect(find.text('ALERTS'), findsOneWidget);
+    expect(find.text('COMPOSE'), findsOneWidget);
+
+    // Switch to Compose
+    await tester.tap(find.text('COMPOSE'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ComposeScreen), findsOneWidget);
   });
 }

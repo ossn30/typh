@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'screens/home_screen.dart';
+import 'screens/main_navigation_screen.dart';
+import 'services/settings_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize persisted user settings before running the app
+  await SettingsService.instance.init();
 
   // Dark status bar and navigation bar styling
   SystemChrome.setSystemUIOverlayStyle(
@@ -40,7 +44,7 @@ class Glyph3aApp extends StatelessWidget {
         fontFamily: 'Roboto',
         useMaterial3: false,
       ),
-      home: const HomeScreen(),
+      home: const MainNavigationScreen(),
     );
   }
 }

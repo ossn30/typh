@@ -3,8 +3,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:glyph/colors.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/animation_service.dart';
 import '../services/glyph_service.dart';
+import '../services/settings_service.dart';
 import '../widgets/animation_player_cards.dart';
 import '../widgets/charging_cards.dart';
 import '../widgets/shake_torch_cards.dart';
@@ -20,6 +22,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final GlyphService _glyph = GlyphService.instance;
   final AnimationService _animService = AnimationService.instance;
+  final SettingsService _settings = SettingsService.instance;
 
   // Charging Animation Settings
   bool _chargingAnimationEnabled = true;
@@ -52,6 +55,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+
+    // Restore persisted settings from device storage
+    _chargingAnimationEnabled = _settings.chargingAnimationEnabled;
+    _selectedArcs.clear();
+    _selectedArcs.addAll(_settings.selectedArcs);
+    _isClockwise = _settings.isClockwise;
+    _isCombinedProgress = _settings.isCombinedProgress;
+    _isDurationAlways = _settings.isDurationAlways;
+    _timerDurationSeconds = _settings.timerDurationSeconds;
+    _chargingBrightness = _settings.chargingBrightness;
+
+    _shakeTorchEnabled = _settings.shakeTorchEnabled;
+    _shakeThreshold = _settings.shakeThreshold;
+    _torchBrightness = _settings.torchBrightness;
+
     _chargingAnimController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 350),
@@ -87,6 +105,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     _glyph.init();
     _glyph.batteryNotifier.addListener(_onBatteryStateChanged);
+
+    if (_shakeTorchEnabled) {
+      _glyph.setShakeDetection(enabled: true, threshold: _shakeThreshold);
+    }
 
     // Listen to native accelerometer shake events
     _shakeSubscription = _glyph.onShakeDetected.listen((gForce) {
@@ -161,6 +183,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     setState(() {
       _chargingAnimationEnabled = enabled;
     });
+    _settings.setChargingAnimationEnabled(enabled);
 
     if (enabled) {
       _chargingAnimController.forward();
@@ -177,6 +200,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     setState(() {
       _shakeTorchEnabled = enabled;
     });
+    _settings.setShakeTorchEnabled(enabled);
 
     if (enabled) {
       _shakeAnimController.forward();
@@ -217,6 +241,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     setState(() {
       _shakeThreshold = newThreshold;
     });
+    _settings.setShakeThreshold(newThreshold);
     if (_shakeTorchEnabled) {
       _glyph.setShakeDetection(enabled: true, threshold: newThreshold);
     }
@@ -241,6 +266,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _selectedArcs.add(arc);
       }
     });
+    _settings.setSelectedArcs(_selectedArcs);
     _applyChargingAnimationIfNeeded();
   }
 
@@ -250,6 +276,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     setState(() {
       _isClockwise = !_isClockwise;
     });
+    _settings.setIsClockwise(_isClockwise);
     _applyChargingAnimationIfNeeded();
   }
 
@@ -259,6 +286,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     setState(() {
       _isCombinedProgress = combined;
     });
+    _settings.setIsCombinedProgress(_isCombinedProgress);
     _applyChargingAnimationIfNeeded();
   }
 
@@ -274,6 +302,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               _timerDurationSeconds = newSeconds;
               _isDurationAlways = false;
             });
+            _settings.setTimerDurationSeconds(newSeconds);
+            _settings.setIsDurationAlways(false);
             _applyChargingAnimationIfNeeded();
           },
         );
@@ -304,7 +334,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
             child: ListView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(top: 12, bottom: 32),
+              padding: const EdgeInsets.only(top: 12, bottom: 100),
               children: [
                 // Category 1 Header: Charging Animation
                 const SizedBox(height: 8),
@@ -414,11 +444,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'Typh',
         style: TextStyle(
           color: Colors.white,
-          fontSize: 30,
-          fontWeight: FontWeight.w600,
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
           fontFamily: 'Ndot',
         ),
       ),
+      actions: [
+        InkWell(
+          onTap: () {
+            launchUrl(Uri.parse('https://github.com/Ossn30'));
+          },
+          child: Row(
+            children: [
+              const Text(
+                'by Ossn30',
+                style: TextStyle(
+                  color: selectedColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'Ndot',
+                ),
+              ),
+              SizedBox(width: 16),
+            ],
+          ),
+        ),
+      ],
       // actions: [
       //   ValueListenableBuilder<BatteryStatus>(
       //     valueListenable: _glyph.batteryNotifier,
@@ -494,6 +545,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 setState(() {
                   _isDurationAlways = true;
                 });
+                _settings.setIsDurationAlways(true);
                 _applyChargingAnimationIfNeeded();
               }
             },
@@ -501,6 +553,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               setState(() {
                 _isDurationAlways = false;
               });
+              _settings.setIsDurationAlways(false);
               _applyChargingAnimationIfNeeded();
               _showTimerDurationDialog();
             },
@@ -512,6 +565,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               setState(() {
                 _chargingBrightness = val;
               });
+              _settings.setChargingBrightness(val);
               _applyChargingAnimationIfNeeded();
             },
           ),
@@ -560,6 +614,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               setState(() {
                 _torchBrightness = val;
               });
+              _settings.setTorchBrightness(val);
               if (_glyph.isTorchOnNotifier.value) {
                 _glyph.setTorch(true, brightness: val);
               }

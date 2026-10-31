@@ -5,8 +5,8 @@ import 'selectable_segment.dart';
 
 enum ShakeIntensityPreset {
   low(1.2, 'LOW', 'Gentle flick / light shake'),
-  medium(2.7, 'MEDIUM', 'Balanced natural shake'),
-  high(4.2, 'HIGH', 'Firm deliberate shake');
+  medium(2.2, 'MEDIUM', 'Balanced natural shake'),
+  high(3.8, 'HIGH', 'Firm deliberate shake');
 
   final double threshold;
   final String label;

@@ -20,6 +20,12 @@ class GlyphAnimationFrame {
       brightness: (json['brightness'] as num?)?.toInt() ?? 4000,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'durationMs': durationMs,
+    'channels': channels.toList(),
+    'brightness': brightness,
+  };
 }
 
 class GlyphAnimation {
@@ -29,6 +35,7 @@ class GlyphAnimation {
   final String icon;
   final String path;
   final bool loop;
+  final bool isCustom;
   final List<GlyphAnimationFrame> frames;
 
   const GlyphAnimation({
@@ -38,6 +45,7 @@ class GlyphAnimation {
     this.icon = 'play_arrow',
     required this.path,
     this.loop = true,
+    this.isCustom = false,
     this.frames = const [],
   });
 
@@ -48,6 +56,7 @@ class GlyphAnimation {
       description: json['description'] as String? ?? '',
       icon: json['icon'] as String? ?? 'play_arrow',
       path: json['path'] as String? ?? '',
+      isCustom: json['isCustom'] as bool? ?? false,
     );
   }
 
@@ -58,6 +67,7 @@ class GlyphAnimation {
     String? fallbackName,
     String? fallbackDescription,
     String? fallbackIcon,
+    bool isCustom = false,
   }) {
     final framesData = (json['frames'] as List<dynamic>?) ?? [];
     final parsedFrames = framesData
@@ -72,11 +82,23 @@ class GlyphAnimation {
       icon: json['icon'] as String? ?? fallbackIcon ?? 'play_arrow',
       path: path,
       loop: json['loop'] as bool? ?? true,
+      isCustom: json['isCustom'] as bool? ?? isCustom,
       frames: parsedFrames,
     );
   }
 
-  GlyphAnimation copyWith({List<GlyphAnimationFrame>? frames}) {
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'description': description,
+    'icon': icon,
+    'path': path,
+    'loop': loop,
+    'isCustom': isCustom,
+    'frames': frames.map((f) => f.toJson()).toList(),
+  };
+
+  GlyphAnimation copyWith({List<GlyphAnimationFrame>? frames, bool? isCustom}) {
     return GlyphAnimation(
       id: id,
       name: name,
@@ -84,6 +106,7 @@ class GlyphAnimation {
       icon: icon,
       path: path,
       loop: loop,
+      isCustom: isCustom ?? this.isCustom,
       frames: frames ?? this.frames,
     );
   }

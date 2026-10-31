@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 import '../models/glyph_animation.dart';
 import 'glyph_service.dart';
 
@@ -15,11 +17,92 @@ class AnimationService {
       ValueNotifier<String?>(null);
   final ValueNotifier<bool> isPlayingNotifier = ValueNotifier<bool>(false);
 
+  final ValueNotifier<List<GlyphAnimation>> customAnimationsNotifier =
+      ValueNotifier<List<GlyphAnimation>>([]);
+
   final Map<String, GlyphAnimation> _cachedAnimations = {};
   List<GlyphAnimation>? _indexAnimations;
+  List<GlyphAnimation> _customAnimations = [];
+  bool _customAnimationsLoaded = false;
 
   bool _isDisposed = false;
   int _playbackSessionId = 0;
+
+  Future<File> _getCustomAnimationsFile() async {
+    final dir = await getApplicationDocumentsDirectory();
+    return File('${dir.path}/custom_animations.json');
+  }
+
+  /// Load custom animations created by the user
+  Future<List<GlyphAnimation>> loadCustomAnimations() async {
+    if (_customAnimationsLoaded) return _customAnimations;
+    try {
+      final file = await _getCustomAnimationsFile();
+      if (!await file.exists()) {
+        _customAnimations = [];
+        _customAnimationsLoaded = true;
+        customAnimationsNotifier.value = [];
+        return [];
+      }
+      final str = await file.readAsString();
+      final List<dynamic> list = json.decode(str) as List<dynamic>;
+      _customAnimations = list.map((item) {
+        final map = item as Map<String, dynamic>;
+        final anim = GlyphAnimation.fromFullJson(
+          map,
+          path: '',
+          isCustom: true,
+        );
+        _cachedAnimations[anim.id] = anim;
+        return anim;
+      }).toList();
+      _customAnimationsLoaded = true;
+      customAnimationsNotifier.value = List.unmodifiable(_customAnimations);
+      return _customAnimations;
+    } catch (e) {
+      debugPrint('Error loading custom animations: $e');
+      return [];
+    }
+  }
+
+  /// Save or update a custom animation
+  Future<bool> saveCustomAnimation(GlyphAnimation animation) async {
+    try {
+      final customAnim = animation.copyWith(isCustom: true);
+      _cachedAnimations[customAnim.id] = customAnim;
+      _customAnimations.removeWhere((a) => a.id == customAnim.id);
+      _customAnimations.insert(0, customAnim);
+      customAnimationsNotifier.value = List.unmodifiable(_customAnimations);
+
+      final file = await _getCustomAnimationsFile();
+      final jsonList = _customAnimations.map((a) => a.toJson()).toList();
+      await file.writeAsString(json.encode(jsonList));
+      return true;
+    } catch (e) {
+      debugPrint('Error saving custom animation: $e');
+      return false;
+    }
+  }
+
+  /// Delete a custom animation
+  Future<bool> deleteCustomAnimation(String id) async {
+    try {
+      if (currentPlayingIdNotifier.value == id) {
+        await stopAnimation();
+      }
+      _cachedAnimations.remove(id);
+      _customAnimations.removeWhere((a) => a.id == id);
+      customAnimationsNotifier.value = List.unmodifiable(_customAnimations);
+
+      final file = await _getCustomAnimationsFile();
+      final jsonList = _customAnimations.map((a) => a.toJson()).toList();
+      await file.writeAsString(json.encode(jsonList));
+      return true;
+    } catch (e) {
+      debugPrint('Error deleting custom animation: $e');
+      return false;
+    }
+  }
 
   /// Load index of all available animations
   Future<List<GlyphAnimation>> loadAnimationsIndex() async {
@@ -53,8 +136,22 @@ class AnimationService {
 
   /// Load complete animation data with all frames
   Future<GlyphAnimation?> loadFullAnimation(GlyphAnimation meta) async {
+    if (meta.frames.isNotEmpty) {
+      _cachedAnimations[meta.id] = meta;
+      return meta;
+    }
     if (_cachedAnimations.containsKey(meta.id)) {
       return _cachedAnimations[meta.id];
+    }
+    if (meta.isCustom) {
+      final custom = _customAnimations.firstWhere(
+        (a) => a.id == meta.id,
+        orElse: () => meta,
+      );
+      if (custom.frames.isNotEmpty) {
+        _cachedAnimations[meta.id] = custom;
+        return custom;
+      }
     }
 
     try {
@@ -68,6 +165,7 @@ class AnimationService {
         fallbackName: meta.name,
         fallbackDescription: meta.description,
         fallbackIcon: meta.icon,
+        isCustom: false,
       );
       _cachedAnimations[meta.id] = fullAnim;
       return fullAnim;
