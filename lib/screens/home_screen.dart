@@ -3,7 +3,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:glyph/colors.dart';
+import '../services/animation_service.dart';
 import '../services/glyph_service.dart';
+import '../widgets/animation_player_cards.dart';
 import '../widgets/charging_cards.dart';
 import '../widgets/timer_duration_dialog.dart';
 
@@ -16,6 +18,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final GlyphService _glyph = GlyphService.instance;
+  final AnimationService _animService = AnimationService.instance;
 
   // Charging Animation Settings
   bool _chargingAnimationEnabled = true;
@@ -25,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
       true; // true = Combined single track, false = Standalone
   bool _isDurationAlways = true; // true = Always, false = Timer
   int _timerDurationSeconds = 3; // Default 3s
+  int _chargingBrightness = 4000; // Brightness controller (400..4000)
   Timer? _chargingTimer;
   bool _simulateCharging = false;
   int _simulationPercent = 75;
@@ -44,6 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _glyph.batteryNotifier.removeListener(_onBatteryStateChanged);
     _chargingTimer?.cancel();
+    _animService.stopAnimation();
     super.dispose();
   }
 
@@ -54,6 +59,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _applyChargingAnimationIfNeeded() {
+    // If an animation is playing, do not override unless charging animation is actively changed
+    if (_animService.isPlayingNotifier.value) {
+      _animService.stopAnimation();
+    }
+
     if (!_chargingAnimationEnabled) {
       _chargingTimer?.cancel();
       return;
@@ -70,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
         isClockwise: _isClockwise,
         isCombined: _isCombinedProgress,
       );
-      _glyph.setChannels(channels, brightness: 4000);
+      _glyph.setChannels(channels, brightness: _chargingBrightness);
 
       _chargingTimer?.cancel();
       if (!_isDurationAlways && _timerDurationSeconds > 0) {
@@ -184,10 +194,11 @@ class _HomeScreenState extends State<HomeScreen> {
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.only(top: 12, bottom: 32),
               children: [
-                // Category Header: Charging Animation
+                // Category 1 Header: Charging Animation
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -213,6 +224,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 _buildChargingAnimationCategory(),
+
+                // Category 2: Glyph Animations
+                const SizedBox(height: 20),
+                AnimationPlayerSection(
+                  onAnimationStarted: () {
+                    // Turn off charging timer if animation starts
+                    _chargingTimer?.cancel();
+                  },
+                ),
               ],
             ),
           ),
@@ -321,6 +341,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 });
                 _applyChargingAnimationIfNeeded();
                 _showTimerDurationDialog();
+              },
+            ),
+            const SizedBox(height: 4),
+            BrightnessCard(
+              brightness: _chargingBrightness,
+              onBrightnessChanged: (val) {
+                setState(() {
+                  _chargingBrightness = val;
+                });
+                _applyChargingAnimationIfNeeded();
               },
             ),
             const SizedBox(height: 4),

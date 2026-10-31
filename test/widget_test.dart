@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:glyph/models/glyph_animation.dart';
 import 'package:glyph/models/glyph_channel.dart';
 import 'package:glyph/services/glyph_service.dart';
 
@@ -143,5 +144,39 @@ void main() {
     expect(formatDuration(90), equals('1m 30s'));
     expect(formatDuration(300), equals('5m'));
     expect(formatDuration(1800), equals('30m'));
+  });
+
+  test('GlyphAnimation model parsing test', () {
+    final json = {
+      'id': 'test_anim',
+      'name': 'Test Animation',
+      'description': 'A test animation',
+      'icon': 'speed',
+      'loop': true,
+      'frames': [
+        {
+          'durationMs': 50,
+          'channels': [0, 1, 2],
+          'brightness': 3000
+        },
+        {
+          'durationMs': 100,
+          'channels': [20, 21],
+          'brightness': 4000
+        }
+      ]
+    };
+
+    final anim = GlyphAnimation.fromFullJson(json, path: 'assets/animations/test_anim.json');
+    expect(anim.id, equals('test_anim'));
+    expect(anim.name, equals('Test Animation'));
+    expect(anim.loop, isTrue);
+    expect(anim.frames.length, equals(2));
+    expect(anim.frames[0].durationMs, equals(50));
+    expect(anim.frames[0].channels, equals({0, 1, 2}));
+    expect(anim.frames[0].brightness, equals(3000));
+    expect(anim.frames[1].durationMs, equals(100));
+    expect(anim.frames[1].channels, equals({20, 21}));
+    expect(anim.frames[1].brightness, equals(4000));
   });
 }

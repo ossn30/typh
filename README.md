@@ -1,4 +1,4 @@
-# glyph
+# Typh
 
 A new Flutter project.
 

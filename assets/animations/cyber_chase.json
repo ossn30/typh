@@ -1,0 +1,332 @@
+{
+  "id": "cyber_chase",
+  "name": "Cyber Chase",
+  "description": "High-velocity comet beam racing through arcs C, A, and B",
+  "loop": true,
+  "frames": [
+    {
+      "durationMs": 45,
+      "channels": [
+        0,
+        35,
+        34
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        1,
+        0,
+        35
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        2,
+        1,
+        0
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        3,
+        2,
+        1
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        4,
+        3,
+        2
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        5,
+        4,
+        3
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        6,
+        5,
+        4
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        7,
+        6,
+        5
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        8,
+        7,
+        6
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        9,
+        8,
+        7
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        10,
+        9,
+        8
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        11,
+        10,
+        9
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        12,
+        11,
+        10
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        13,
+        12,
+        11
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        14,
+        13,
+        12
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        15,
+        14,
+        13
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        16,
+        15,
+        14
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        17,
+        16,
+        15
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        18,
+        17,
+        16
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        19,
+        18,
+        17
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        20,
+        19,
+        18
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        21,
+        20,
+        19
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        22,
+        21,
+        20
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        23,
+        22,
+        21
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        24,
+        23,
+        22
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        25,
+        24,
+        23
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        26,
+        25,
+        24
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        27,
+        26,
+        25
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        28,
+        27,
+        26
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        29,
+        28,
+        27
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        30,
+        29,
+        28
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        31,
+        30,
+        29
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        32,
+        31,
+        30
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        33,
+        32,
+        31
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        34,
+        33,
+        32
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        35,
+        34,
+        33
+      ],
+      "brightness": 4000
+    }
+  ]
+}

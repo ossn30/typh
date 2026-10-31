@@ -430,3 +430,98 @@ class ChargingPreviewCard extends StatelessWidget {
   }
 }
 
+/// Card: Brightness Controller for Charging Animation
+class BrightnessCard extends StatelessWidget {
+  final int brightness; // 400..4000
+  final ValueChanged<int> onBrightnessChanged;
+
+  const BrightnessCard({
+    super.key,
+    required this.brightness,
+    required this.onBrightnessChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final percent = ((brightness / 4000) * 100).round().clamp(10, 100);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'BRIGHTNESS',
+                style: TextStyle(
+                  color: Color(0xFF888888),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                  fontFamily: 'ndot',
+                ),
+              ),
+              Text(
+                '$percent%',
+                style: const TextStyle(
+                  color: selectedColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  fontFamily: 'ndot',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const Icon(
+                Icons.brightness_low_rounded,
+                color: Color(0xFF777777),
+                size: 16,
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    activeTrackColor: selectedColor,
+                    inactiveTrackColor: const Color(0xFF262626),
+                    thumbColor: Colors.white,
+                    trackHeight: 4,
+                  ),
+                  child: Slider(
+                    value: brightness.toDouble(),
+                    min: 400,
+                    max: 4000,
+                    divisions: 36,
+                    onChanged: (val) {
+                      final roundVal = val.round();
+                      if (roundVal != brightness) {
+                        HapticFeedback.selectionClick();
+                        onBrightnessChanged(roundVal);
+                      }
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Icon(
+                Icons.brightness_high_rounded,
+                color: Colors.white,
+                size: 16,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+

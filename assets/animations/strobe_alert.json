@@ -1,0 +1,281 @@
+{
+  "id": "strobe_alert",
+  "name": "Strobe Alert",
+  "description": "High-intensity tactical multi-burst strobe warning",
+  "loop": true,
+  "frames": [
+    {
+      "durationMs": 45,
+      "channels": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 60,
+      "channels": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 60,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 60,
+      "channels": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 60,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 350,
+      "channels": [],
+      "brightness": 0
+    }
+  ]
+}

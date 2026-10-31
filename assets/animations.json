@@ -1,0 +1,51 @@
+[
+  {
+    "id": "cyber_chase",
+    "name": "Cyber Chase",
+    "description": "High-velocity comet beam racing through arcs C, A, and B",
+    "icon": "speed",
+    "path": "assets/animations/cyber_chase.json"
+  },
+  {
+    "id": "breathing_pulse",
+    "name": "Breathing Pulse",
+    "description": "Calming organic pulse expanding and fading softly",
+    "icon": "air",
+    "path": "assets/animations/breathing_pulse.json"
+  },
+  {
+    "id": "heartbeat",
+    "name": "Heartbeat",
+    "description": "Rhythmic cardiac double-beat with resting pause",
+    "icon": "favorite",
+    "path": "assets/animations/heartbeat.json"
+  },
+  {
+    "id": "radar_scanner",
+    "name": "Radar Scanner",
+    "description": "Sweeping radar beam across Arc C with target blips on A & B",
+    "icon": "radar",
+    "path": "assets/animations/radar_scanner.json"
+  },
+  {
+    "id": "equalizer_wave",
+    "name": "Equalizer Wave",
+    "description": "Punchy audio graphic equalizer bouncing to the rhythm",
+    "icon": "graphic_eq",
+    "path": "assets/animations/equalizer_wave.json"
+  },
+  {
+    "id": "strobe_alert",
+    "name": "Strobe Alert",
+    "description": "High-intensity tactical multi-burst strobe warning",
+    "icon": "flash_on",
+    "path": "assets/animations/strobe_alert.json"
+  },
+  {
+    "id": "orbit_spin",
+    "name": "Orbit Spin",
+    "description": "Dual counter-orbiting binary nodes with synchronized pulses",
+    "icon": "sync",
+    "path": "assets/animations/orbit_spin.json"
+  }
+]

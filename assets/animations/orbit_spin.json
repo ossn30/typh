@@ -1,0 +1,228 @@
+{
+  "id": "orbit_spin",
+  "name": "Orbit Spin",
+  "description": "Dual counter-orbiting binary nodes with synchronized pulses",
+  "loop": true,
+  "frames": [
+    {
+      "durationMs": 50,
+      "channels": [
+        0,
+        19,
+        10,
+        9,
+        20,
+        31
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        1,
+        0,
+        11,
+        10
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        2,
+        1,
+        12,
+        11,
+        22,
+        33
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        3,
+        2,
+        13,
+        12
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        4,
+        3,
+        14,
+        13,
+        24,
+        35
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        5,
+        4,
+        15,
+        14
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        6,
+        5,
+        16,
+        15,
+        26,
+        32
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        7,
+        6,
+        17,
+        16
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        8,
+        7,
+        18,
+        17,
+        28,
+        34
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        9,
+        8,
+        19,
+        18
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        10,
+        9,
+        0,
+        19,
+        30,
+        31
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        11,
+        10,
+        1,
+        0
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        12,
+        11,
+        2,
+        1,
+        21,
+        33
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        13,
+        12,
+        3,
+        2
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        14,
+        13,
+        4,
+        3,
+        23,
+        35
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        15,
+        14,
+        5,
+        4
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        16,
+        15,
+        6,
+        5,
+        25,
+        32
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        17,
+        16,
+        7,
+        6
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        18,
+        17,
+        8,
+        7,
+        27,
+        34
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        19,
+        18,
+        9,
+        8
+      ],
+      "brightness": 4000
+    }
+  ]
+}
