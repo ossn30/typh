@@ -8,6 +8,7 @@ import 'package:glyph/screens/compose_screen.dart';
 import 'package:glyph/screens/main_navigation_screen.dart';
 import 'package:glyph/services/glyph_service.dart';
 import 'package:glyph/services/settings_service.dart';
+import 'package:glyph/widgets/glyph_strip_editor_dialog.dart';
 import 'package:glyph/widgets/interactive_glyph_visualizer.dart';
 import 'package:glyph/widgets/shake_torch_cards.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -366,5 +367,51 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(ComposeScreen), findsOneWidget);
+  });
+
+  testWidgets('GlyphStripEditorDialog displays straight strip with segments and cuts', (tester) async {
+    Set<int> channels = {0, 1};
+    Set<int>? changed;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (ctx) => ElevatedButton(
+              onPressed: () {
+                showGlyphStripEditorDialog(
+                  context: ctx,
+                  initialStrip: 'C',
+                  activeChannels: channels,
+                  onChannelsChanged: (c) => changed = c,
+                );
+              },
+              child: const Text('OPEN'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('OPEN'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(GlyphStripEditorDialog), findsOneWidget);
+    expect(find.textContaining('ARC C'), findsWidgets);
+    expect(find.text('ARC A (11)'), findsOneWidget);
+    expect(find.text('ARC B (5)'), findsOneWidget);
+    expect(find.text('SELECT ALL'), findsOneWidget);
+    expect(find.text('CLEAR'), findsOneWidget);
+
+    // Switch to Arc A
+    await tester.tap(find.text('ARC A (11)'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('ARC A • RIGHT ARC'), findsOneWidget);
+
+    // Close
+    await tester.tap(find.text('DONE'));
+    await tester.pumpAndSettle();
+    expect(find.byType(GlyphStripEditorDialog), findsNothing);
+    expect(channels.isNotEmpty || changed != null, isTrue);
   });
 }

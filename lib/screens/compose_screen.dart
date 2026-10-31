@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:glyph/colors.dart';
 import '../models/glyph_animation.dart';
-import '../models/glyph_channel.dart';
 import '../services/animation_service.dart';
 import '../services/glyph_service.dart';
+import '../widgets/glyph_strip_editor_dialog.dart';
 import '../widgets/interactive_glyph_visualizer.dart';
 
 class ComposeScreen extends StatefulWidget {
@@ -23,7 +23,10 @@ class ComposeScreen extends StatefulWidget {
   State<ComposeScreen> createState() => _ComposeScreenState();
 }
 
-class _ComposeScreenState extends State<ComposeScreen> {
+class _ComposeScreenState extends State<ComposeScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   final GlyphService _glyph = GlyphService.instance;
   final AnimationService _animService = AnimationService.instance;
 
@@ -104,22 +107,19 @@ class _ComposeScreenState extends State<ComposeScreen> {
     );
   }
 
-  void _toggleGroup(List<GlyphLight> groupLights) {
-    HapticFeedback.lightImpact();
-    final groupIndices = groupLights.map((l) => l.channelIndex).toSet();
-    final current = Set<int>.from(_currentFrame.channels);
-    final allPresent = groupIndices.every((i) => current.contains(i));
-
-    Set<int> updated;
-    if (allPresent) {
-      updated = current.difference(groupIndices);
-    } else {
-      updated = current.union(groupIndices);
-    }
-    _updateCurrentFrame(channels: updated);
-    if (_isTestingFrame) {
-      _glyph.setChannels(updated, brightness: _currentFrame.brightness);
-    }
+  void _openStripEditor(String strip) {
+    showGlyphStripEditorDialog(
+      context: context,
+      initialStrip: strip,
+      activeChannels: _currentFrame.channels,
+      brightness: _currentFrame.brightness,
+      onChannelsChanged: (newChannels) {
+        _updateCurrentFrame(channels: newChannels);
+        if (_isTestingFrame) {
+          _glyph.setChannels(newChannels, brightness: _currentFrame.brightness);
+        }
+      },
+    );
   }
 
   void _clearAllChannels() {
@@ -293,13 +293,16 @@ class _ComposeScreenState extends State<ComposeScreen> {
     _animService.playAnimation(anim);
 
     _playbackOnceTimer?.cancel();
-    _playbackOnceTimer = Timer(Duration(milliseconds: _totalDurationMs + 50), () {
-      if (mounted && _isPlayingOnce) {
-        setState(() {
-          _isPlayingOnce = false;
-        });
-      }
-    });
+    _playbackOnceTimer = Timer(
+      Duration(milliseconds: _totalDurationMs + 50),
+      () {
+        if (mounted && _isPlayingOnce) {
+          setState(() {
+            _isPlayingOnce = false;
+          });
+        }
+      },
+    );
   }
 
   void _toggleTestFrame() {
@@ -692,7 +695,10 @@ class _ComposeScreenState extends State<ComposeScreen> {
                       max: 800,
                       divisions: 39,
                       onChanged: (val) {
-                        final rounded = ((val / 20).round() * 20).clamp(20, 800);
+                        final rounded = ((val / 20).round() * 20).clamp(
+                          20,
+                          800,
+                        );
                         if (rounded != frame.durationMs) {
                           HapticFeedback.selectionClick();
                           setSheetState(() {});
@@ -718,7 +724,9 @@ class _ComposeScreenState extends State<ComposeScreen> {
                             vertical: 5,
                           ),
                           decoration: BoxDecoration(
-                            color: isCurrent ? selectedColor : appBackgroundColor,
+                            color: isCurrent
+                                ? selectedColor
+                                : appBackgroundColor,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
                               color: isCurrent
@@ -786,8 +794,12 @@ class _ComposeScreenState extends State<ComposeScreen> {
                           HapticFeedback.selectionClick();
                           setSheetState(() {});
                           _updateFrameAtIndex(frameIndex, brightness: rounded);
-                          if (_isTestingFrame && frameIndex == _activeFrameIndex) {
-                            _glyph.setChannels(frame.channels, brightness: rounded);
+                          if (_isTestingFrame &&
+                              frameIndex == _activeFrameIndex) {
+                            _glyph.setChannels(
+                              frame.channels,
+                              brightness: rounded,
+                            );
                           }
                         }
                       },
@@ -795,53 +807,61 @@ class _ComposeScreenState extends State<ComposeScreen> {
                   ),
                   Wrap(
                     spacing: 6,
-                    children: [
-                      {'pct': 25, 'val': 1000},
-                      {'pct': 50, 'val': 2000},
-                      {'pct': 75, 'val': 3000},
-                      {'pct': 100, 'val': 4000},
-                    ].map((preset) {
-                      final val = preset['val'] as int;
-                      final pct = preset['pct'] as int;
-                      final isCurrent = (frame.brightness - val).abs() < 100;
-                      return InkWell(
-                        borderRadius: BorderRadius.circular(8),
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          setSheetState(() {});
-                          _updateFrameAtIndex(frameIndex, brightness: val);
-                          if (_isTestingFrame && frameIndex == _activeFrameIndex) {
-                            _glyph.setChannels(frame.channels, brightness: val);
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isCurrent ? selectedColor : appBackgroundColor,
+                    children:
+                        [
+                          {'pct': 25, 'val': 1000},
+                          {'pct': 50, 'val': 2000},
+                          {'pct': 75, 'val': 3000},
+                          {'pct': 100, 'val': 4000},
+                        ].map((preset) {
+                          final val = preset['val'] as int;
+                          final pct = preset['pct'] as int;
+                          final isCurrent =
+                              (frame.brightness - val).abs() < 100;
+                          return InkWell(
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: isCurrent
-                                  ? selectedColor
-                                  : Colors.white.withValues(alpha: 0.1),
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              setSheetState(() {});
+                              _updateFrameAtIndex(frameIndex, brightness: val);
+                              if (_isTestingFrame &&
+                                  frameIndex == _activeFrameIndex) {
+                                _glyph.setChannels(
+                                  frame.channels,
+                                  brightness: val,
+                                );
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isCurrent
+                                    ? selectedColor
+                                    : appBackgroundColor,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isCurrent
+                                      ? selectedColor
+                                      : Colors.white.withValues(alpha: 0.1),
+                                ),
+                              ),
+                              child: Text(
+                                '$pct%',
+                                style: TextStyle(
+                                  color: isCurrent
+                                      ? Colors.white
+                                      : const Color(0xFFCCCCCC),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'ndot',
+                                ),
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            '$pct%',
-                            style: TextStyle(
-                              color: isCurrent
-                                  ? Colors.white
-                                  : const Color(0xFFCCCCCC),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'ndot',
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                          );
+                        }).toList(),
                   ),
                   const SizedBox(height: 22),
 
@@ -880,6 +900,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -1029,20 +1050,11 @@ class _ComposeScreenState extends State<ComposeScreen> {
               children: [
                 _buildToolbarButton('ALL 36', _selectAll36Channels),
                 const SizedBox(width: 6),
-                _buildToolbarButton(
-                  'ARC C',
-                  () => _toggleGroup(Phone3aGlyphs.groupC),
-                ),
+                _buildToolbarButton('ARC A (11)', () => _openStripEditor('A')),
                 const SizedBox(width: 6),
-                _buildToolbarButton(
-                  'ARC A',
-                  () => _toggleGroup(Phone3aGlyphs.groupA),
-                ),
+                _buildToolbarButton('ARC C (20)', () => _openStripEditor('C')),
                 const SizedBox(width: 6),
-                _buildToolbarButton(
-                  'ARC B',
-                  () => _toggleGroup(Phone3aGlyphs.groupB),
-                ),
+                _buildToolbarButton('ARC B (5)', () => _openStripEditor('B')),
                 const SizedBox(width: 6),
                 _buildToolbarButton('CLEAR', _clearAllChannels),
                 const SizedBox(width: 6),
@@ -1132,10 +1144,8 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     tooltip: 'Customize Frame',
-                    onPressed: () => _showFrameSettingsSheet(
-                      context,
-                      _activeFrameIndex,
-                    ),
+                    onPressed: () =>
+                        _showFrameSettingsSheet(context, _activeFrameIndex),
                   ),
                   const SizedBox(width: 12),
                   IconButton(
@@ -1179,10 +1189,6 @@ class _ComposeScreenState extends State<ComposeScreen> {
                         decoration: BoxDecoration(
                           color: appBackgroundColor,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.15),
-                            width: 1,
-                          ),
                         ),
                         child: const Icon(
                           Icons.add_rounded,
@@ -1226,10 +1232,6 @@ class _ComposeScreenState extends State<ComposeScreen> {
                       decoration: BoxDecoration(
                         color: isSelected ? selectedColor : appBackgroundColor,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: isSelected ? Colors.white : Colors.transparent,
-                          width: 1.4,
-                        ),
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -1237,33 +1239,27 @@ class _ComposeScreenState extends State<ComposeScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
-                                'F${index + 1}',
-                                style: TextStyle(
-                                  color: isSelected
-                                      ? Colors.white
-                                      : const Color(0xFFCCCCCC),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w800,
-                                  fontFamily: 'ndot',
+                              if (!isSelected)
+                                Text(
+                                  'F${index + 1}',
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : const Color(0xFFCCCCCC),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
+                                    fontFamily: 'ndot',
+                                  ),
                                 ),
-                              ),
                               if (isSelected) ...[
-                                const SizedBox(width: 4),
                                 GestureDetector(
                                   onTap: () =>
                                       _showFrameSettingsSheet(context, index),
                                   child: Container(
                                     padding: const EdgeInsets.all(2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.25,
-                                      ),
-                                      shape: BoxShape.circle,
-                                    ),
                                     child: const Icon(
                                       Icons.tune_rounded,
-                                      size: 11,
+                                      size: 22,
                                       color: Colors.white,
                                     ),
                                   ),
@@ -1280,18 +1276,19 @@ class _ComposeScreenState extends State<ComposeScreen> {
                                   : const Color(0xFF777777),
                               fontSize: 9,
                               fontWeight: FontWeight.w600,
+                              fontFamily: 'ndot',
                             ),
                           ),
-                          Text(
-                            '${frame.channels.length} on',
-                            style: TextStyle(
-                              color: isSelected
-                                  ? Colors.white.withValues(alpha: 0.85)
-                                  : const Color(0xFF999999),
-                              fontSize: 8,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                          // Text(
+                          //   '${frame.channels.length} on',
+                          //   style: TextStyle(
+                          //     color: isSelected
+                          //         ? Colors.white.withValues(alpha: 0.85)
+                          //         : const Color(0xFF999999),
+                          //     fontSize: 8,
+                          //     fontWeight: FontWeight.w700,
+                          //   ),
+                          // ),
                         ],
                       ),
                     ),
@@ -1430,11 +1427,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                color: Colors.white,
-                size: 18,
-              ),
+              Icon(icon, color: Colors.white, size: 18),
               const SizedBox(width: 6),
               Text(
                 label,

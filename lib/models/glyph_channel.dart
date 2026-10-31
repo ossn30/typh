@@ -16,14 +16,14 @@ class GlyphLight {
 
 class Phone3aGlyphs {
   /// Group C: 20 lights (Indices 0 - 19)
-  /// C1 is bottom left, C20 is top right of circular arc
+  /// Upper-left circular arc. C1 is bottom-left, C20 is top.
   static final List<GlyphLight> groupC = List.generate(20, (i) {
     final num = i + 1;
     final desc = num == 1
-        ? 'Bottom-left arc start'
+        ? 'Upper-left arc bottom start'
         : num == 20
-            ? 'Top-right arc end'
-            : 'Circular arc segment $num';
+            ? 'Upper-left arc top end'
+            : 'Upper-left arc segment $num';
     return GlyphLight(
       id: 'C$num',
       group: 'C',
@@ -34,14 +34,14 @@ class Phone3aGlyphs {
   });
 
   /// Group A: 11 lights (Indices 20 - 30)
-  /// A1 is top, A11 is bottom of vertical strip
+  /// Right arc strip. A1 is top, A11 is bottom.
   static final List<GlyphLight> groupA = List.generate(11, (i) {
     final num = i + 1;
     final desc = num == 1
-        ? 'Top vertical strip start'
+        ? 'Right arc top start'
         : num == 11
-            ? 'Bottom vertical strip end'
-            : 'Vertical strip segment $num';
+            ? 'Right arc bottom end'
+            : 'Right arc segment $num';
     return GlyphLight(
       id: 'A$num',
       group: 'A',
@@ -52,7 +52,7 @@ class Phone3aGlyphs {
   });
 
   /// Group B: 5 lights (Indices 31 - 35)
-  /// B1 is bottom right, B5 is top left of diagonal strip
+  /// Lower-left arc strip. B1 is bottom right, B5 is top left.
   static final List<GlyphLight> groupB = List.generate(5, (i) {
     final num = i + 1;
     final desc = num == 1

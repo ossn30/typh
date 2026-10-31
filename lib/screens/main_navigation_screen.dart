@@ -16,7 +16,6 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
-  bool _isTabTapping = false;
   bool _canSwipe = true;
 
   @override
@@ -28,19 +27,24 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void _onTabTapped(int index) {
     if (_currentIndex == index) return;
     HapticFeedback.lightImpact();
+    final oldIndex = _currentIndex;
     setState(() {
       _currentIndex = index;
     });
-    _isTabTapping = true;
-    _pageController
-        .animateToPage(
-          index,
-          duration: const Duration(milliseconds: 280),
-          curve: Curves.easeOutCubic,
-        )
-        .then((_) {
-          _isTabTapping = false;
-        });
+
+    final dist = (index - oldIndex).abs();
+    if (dist > 1) {
+      // Instant switch for non-adjacent screens (e.g. Home <-> Compose)
+      // Eliminates intermediate screen loading and scroll jank!
+      _pageController.jumpToPage(index);
+    } else {
+      // Smooth animation for adjacent screens
+      _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+      );
+    }
   }
 
   @override
@@ -61,7 +65,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 ? const BouncingScrollPhysics()
                 : const NeverScrollableScrollPhysics(),
             onPageChanged: (index) {
-              if (!_isTabTapping) {
+              if (_currentIndex != index) {
                 HapticFeedback.selectionClick();
                 setState(() {
                   _currentIndex = index;
@@ -99,98 +103,74 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   Widget _buildFloatingPillNavBar(double navWidth) {
-    const double navHeight = 54.0;
+    const double navHeight = 50.0;
     const double padding = 5.0;
-    final double usableWidth = navWidth - (padding * 2);
+    final double usableWidth = navWidth - (padding * 3);
     final double itemWidth = usableWidth / 3.0;
-    const double itemHeight = navHeight - (padding * 2);
+    const double itemHeight = navHeight - (padding * 2.4);
 
-    return AnimatedBuilder(
-      animation: _pageController,
-      builder: (context, _) {
-        double page = _currentIndex.toDouble();
-        if (_pageController.hasClients &&
-            _pageController.position.haveDimensions) {
-          page = (_pageController.page ?? _currentIndex.toDouble()).clamp(
-            0.0,
-            2.0,
-          );
-        }
-
-        final pillLeft = page * itemWidth;
-
-        return Container(
-          width: navWidth,
-          height: navHeight,
-          padding: const EdgeInsets.all(padding),
-          decoration: BoxDecoration(
-            color: appBackgroundColor,
-            borderRadius: BorderRadius.circular(32),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.12),
-              width: 1.2,
+    return Container(
+      width: navWidth,
+      height: navHeight,
+      padding: const EdgeInsets.all(padding),
+      decoration: BoxDecoration(
+        color: appBackgroundColor,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+      ),
+      child: Stack(
+        children: [
+          // Hardware-accelerated sliding white pill indicator
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+            left: _currentIndex * itemWidth,
+            top: 0,
+            width: itemWidth,
+            height: itemHeight,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(22),
+              ),
             ),
           ),
-          child: Stack(
+
+          // Tab Items Row
+          Row(
             children: [
-              // Real-Time Sliding White Pill Indicator
-              Positioned(
-                left: pillLeft,
-                top: 0,
-                width: itemWidth,
-                height: itemHeight,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(22),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.white.withValues(alpha: 0.18),
-                        blurRadius: 10,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
+              Expanded(
+                child: _buildNavItem(
+                  index: 0,
+                  icon: Icons.home_rounded,
+                  label: 'HOME',
+                  isSelected: _currentIndex == 0,
+                  height: itemHeight,
                 ),
               ),
-
-              // Tab Items Row
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildNavItem(
-                      index: 0,
-                      icon: Icons.home_rounded,
-                      label: 'HOME',
-                      currentPage: page,
-                      height: itemHeight,
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildNavItem(
-                      index: 1,
-                      icon: Icons.notifications_none_rounded,
-                      activeIcon: Icons.notifications_rounded,
-                      label: 'ALERTS',
-                      currentPage: page,
-                      height: itemHeight,
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildNavItem(
-                      index: 2,
-                      icon: Icons.auto_awesome_rounded,
-                      label: 'COMPOSE',
-                      currentPage: page,
-                      height: itemHeight,
-                    ),
-                  ),
-                ],
+              Expanded(
+                child: _buildNavItem(
+                  index: 1,
+                  icon: Icons.notifications_none_rounded,
+                  activeIcon: Icons.notifications_rounded,
+                  label: 'ALERTS',
+                  isSelected: _currentIndex == 1,
+                  height: itemHeight,
+                ),
+              ),
+              Expanded(
+                child: _buildNavItem(
+                  index: 2,
+                  icon: Icons.auto_awesome_rounded,
+                  label: 'COMPOSE',
+                  isSelected: _currentIndex == 2,
+                  height: itemHeight,
+                ),
               ),
             ],
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
@@ -199,17 +179,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     required IconData icon,
     IconData? activeIcon,
     required String label,
-    required double currentPage,
+    required bool isSelected,
     required double height,
   }) {
-    // Distance from current page to this tab (0.0 = fully active, 1.0+ = inactive)
-    final progress = (1.0 - (currentPage - index).abs()).clamp(0.0, 1.0);
-    final color = Color.lerp(
-      const Color(0xFF8A8A8E),
-      const Color(0xFF0A0A0C),
-      progress,
-    )!;
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -217,28 +189,44 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         onTap: () => _onTabTapped(index),
         child: SizedBox(
           height: height,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                (progress > 0.5 && activeIcon != null) ? activeIcon : icon,
-                color: color,
-                size: 17,
-              ),
-              const SizedBox(width: 5),
-              Text(
-                label,
-                maxLines: 1,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.6,
-                  fontFamily: 'ndot',
-                ),
-              ),
-            ],
+          child: TweenAnimationBuilder<Color?>(
+            tween: ColorTween(
+              end: isSelected
+                  ? const Color(0xFF0A0A0C)
+                  : const Color(0xFF8A8A8E),
+            ),
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            builder: (context, color, child) {
+              final activeColor =
+                  color ??
+                  (isSelected
+                      ? const Color(0xFF0A0A0C)
+                      : const Color(0xFF8A8A8E));
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isSelected && activeIcon != null ? activeIcon : icon,
+                    color: activeColor,
+                    size: 17,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: activeColor,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6,
+                      fontFamily: 'ndot',
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
