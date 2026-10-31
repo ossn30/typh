@@ -7,10 +7,7 @@ import '../services/animation_service.dart';
 class AnimationPlayerSection extends StatefulWidget {
   final VoidCallback? onAnimationStarted;
 
-  const AnimationPlayerSection({
-    super.key,
-    this.onAnimationStarted,
-  });
+  const AnimationPlayerSection({super.key, this.onAnimationStarted});
 
   @override
   State<AnimationPlayerSection> createState() => _AnimationPlayerSectionState();
@@ -43,10 +40,32 @@ class _AnimationPlayerSectionState extends State<AnimationPlayerSection> {
         return Icons.speed_rounded;
       case 'breathing_pulse':
         return Icons.air_rounded;
+      case 'warp_drive':
+        return Icons.rocket_launch_rounded;
+      case 'matrix_rain':
+        return Icons.terminal_rounded;
+      case 'night_rider':
+        return Icons.view_column_rounded;
+      case 'supernova':
+        return Icons.flare_rounded;
+      case 'police_interceptor':
+        return Icons.local_police_rounded;
       case 'heartbeat':
         return Icons.favorite_rounded;
+      case 'pendulum_swing':
+        return Icons.hourglass_bottom_rounded;
+      case 'meteor_shower':
+        return Icons.auto_awesome_rounded;
+      case 'sound_ripple':
+        return Icons.waves_rounded;
       case 'radar_scanner':
         return Icons.radar_rounded;
+      case 'quantum_flux':
+        return Icons.blur_on_rounded;
+      case 'digital_clock':
+        return Icons.schedule_rounded;
+      case 'snake_game':
+        return Icons.videogame_asset_rounded;
       case 'equalizer_wave':
         return Icons.graphic_eq_rounded;
       case 'strobe_alert':
@@ -116,11 +135,13 @@ class _AnimationPlayerSectionState extends State<AnimationPlayerSection> {
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: selectedColor.withValues(alpha: 0.18),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: selectedColor),
+                          // border: Border.all(color: selectedColor),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -172,8 +193,10 @@ class _AnimationPlayerSectionState extends State<AnimationPlayerSection> {
                 children: List.generate(_animations.length, (index) {
                   final anim = _animations[index];
                   final isPlaying = currentPlayingId == anim.id;
-                  final borderRadius =
-                      _getBorderRadius(index, _animations.length);
+                  final borderRadius = _getBorderRadius(
+                    index,
+                    _animations.length,
+                  );
 
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 4),
@@ -196,9 +219,6 @@ class _AnimationPlayerSectionState extends State<AnimationPlayerSection> {
                           decoration: BoxDecoration(
                             color: cardColor,
                             borderRadius: borderRadius,
-                            border: isPlaying
-                                ? Border.all(color: selectedColor, width: 1.2)
-                                : null,
                           ),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 14,
@@ -306,4 +326,3 @@ class _AnimationPlayerSectionState extends State<AnimationPlayerSection> {
     );
   }
 }
-

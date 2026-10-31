@@ -1,0 +1,216 @@
+{
+  "id": "night_rider",
+  "name": "Night Rider",
+  "description": "Iconic high-speed cybernetic visor scanner bouncing back and forth on Arc A",
+  "loop": true,
+  "frames": [
+    {
+      "durationMs": 34,
+      "channels": [
+        20
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        21,
+        20
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        22,
+        21,
+        20
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        23,
+        22,
+        21
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        24,
+        23,
+        22
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        25,
+        24,
+        23
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        26,
+        25,
+        24
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        27,
+        26,
+        25
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        28,
+        27,
+        26
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        29,
+        28,
+        27
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        30,
+        29,
+        28
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 40,
+      "channels": [
+        29,
+        30
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        30
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        29,
+        30
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        28,
+        29,
+        30
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        27,
+        28,
+        29
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        26,
+        27,
+        28
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        25,
+        26,
+        27
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        24,
+        25,
+        26
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        23,
+        24,
+        25
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        22,
+        23,
+        24
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        21,
+        22,
+        23
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        20,
+        21,
+        22
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 40,
+      "channels": [
+        20,
+        21
+      ],
+      "brightness": 4000
+    }
+  ]
+}

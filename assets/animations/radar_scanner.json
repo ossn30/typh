@@ -1,11 +1,11 @@
 {
   "id": "radar_scanner",
   "name": "Radar Scanner",
-  "description": "Sweeping radar beam across Arc C with target blips on A & B",
+  "description": "Rotating circular radar antenna with smooth target blips on A & B",
   "loop": true,
   "frames": [
     {
-      "durationMs": 55,
+      "durationMs": 32,
       "channels": [
         0,
         19,
@@ -19,7 +19,7 @@
       "brightness": 4000
     },
     {
-      "durationMs": 55,
+      "durationMs": 32,
       "channels": [
         1,
         0,
@@ -33,16 +33,19 @@
       "brightness": 4000
     },
     {
-      "durationMs": 55,
+      "durationMs": 32,
       "channels": [
         2,
         1,
-        0
+        0,
+        33,
+        34,
+        35
       ],
       "brightness": 4000
     },
     {
-      "durationMs": 55,
+      "durationMs": 32,
       "channels": [
         3,
         2,
@@ -51,7 +54,7 @@
       "brightness": 4000
     },
     {
-      "durationMs": 55,
+      "durationMs": 32,
       "channels": [
         4,
         3,
@@ -60,7 +63,7 @@
       "brightness": 4000
     },
     {
-      "durationMs": 55,
+      "durationMs": 32,
       "channels": [
         5,
         4,
@@ -69,7 +72,7 @@
       "brightness": 4000
     },
     {
-      "durationMs": 55,
+      "durationMs": 32,
       "channels": [
         6,
         5,
@@ -78,7 +81,7 @@
       "brightness": 4000
     },
     {
-      "durationMs": 55,
+      "durationMs": 32,
       "channels": [
         7,
         6,
@@ -87,7 +90,7 @@
       "brightness": 4000
     },
     {
-      "durationMs": 55,
+      "durationMs": 32,
       "channels": [
         8,
         7,
@@ -96,7 +99,7 @@
       "brightness": 4000
     },
     {
-      "durationMs": 55,
+      "durationMs": 32,
       "channels": [
         9,
         8,
@@ -105,7 +108,7 @@
       "brightness": 4000
     },
     {
-      "durationMs": 55,
+      "durationMs": 32,
       "channels": [
         10,
         9,
@@ -114,7 +117,7 @@
       "brightness": 4000
     },
     {
-      "durationMs": 55,
+      "durationMs": 32,
       "channels": [
         11,
         10,
@@ -123,7 +126,7 @@
       "brightness": 4000
     },
     {
-      "durationMs": 55,
+      "durationMs": 32,
       "channels": [
         12,
         11,
@@ -132,7 +135,7 @@
       "brightness": 4000
     },
     {
-      "durationMs": 55,
+      "durationMs": 32,
       "channels": [
         13,
         12,
@@ -141,7 +144,7 @@
       "brightness": 4000
     },
     {
-      "durationMs": 55,
+      "durationMs": 32,
       "channels": [
         14,
         13,
@@ -150,7 +153,7 @@
       "brightness": 4000
     },
     {
-      "durationMs": 55,
+      "durationMs": 32,
       "channels": [
         15,
         14,
@@ -159,7 +162,7 @@
       "brightness": 4000
     },
     {
-      "durationMs": 55,
+      "durationMs": 32,
       "channels": [
         16,
         15,
@@ -168,7 +171,7 @@
       "brightness": 4000
     },
     {
-      "durationMs": 55,
+      "durationMs": 32,
       "channels": [
         17,
         16,
@@ -178,12 +181,17 @@
         22,
         23,
         24,
-        25
+        25,
+        26,
+        27,
+        28,
+        29,
+        30
       ],
       "brightness": 4000
     },
     {
-      "durationMs": 55,
+      "durationMs": 32,
       "channels": [
         18,
         17,
@@ -193,22 +201,27 @@
         22,
         23,
         24,
-        25
+        25,
+        26,
+        27,
+        28,
+        29,
+        30
       ],
       "brightness": 4000
     },
     {
-      "durationMs": 55,
+      "durationMs": 32,
       "channels": [
         19,
         18,
         17,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25
+        25,
+        26,
+        27,
+        28,
+        29,
+        30
       ],
       "brightness": 4000
     }

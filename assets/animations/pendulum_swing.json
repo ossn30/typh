@@ -1,0 +1,440 @@
+{
+  "id": "pendulum_swing",
+  "name": "Pendulum Swing",
+  "description": "Physics-driven harmonic pendulum oscillation sweeping along the lower arc",
+  "loop": true,
+  "frames": [
+    {
+      "durationMs": 32,
+      "channels": [
+        9,
+        10,
+        11
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        9,
+        10,
+        11
+      ],
+      "brightness": 3991
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        10,
+        11,
+        12
+      ],
+      "brightness": 3965
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        11,
+        12,
+        13
+      ],
+      "brightness": 3923
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        11,
+        12,
+        13
+      ],
+      "brightness": 3866
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        12,
+        13,
+        14
+      ],
+      "brightness": 3793
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        12,
+        13,
+        14
+      ],
+      "brightness": 3707
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        13,
+        14,
+        15
+      ],
+      "brightness": 3608
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        13,
+        14,
+        15
+      ],
+      "brightness": 3500
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        14,
+        15,
+        16
+      ],
+      "brightness": 3382
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        14,
+        15,
+        16
+      ],
+      "brightness": 3258
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        14,
+        15,
+        16
+      ],
+      "brightness": 3130
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        14,
+        15,
+        16
+      ],
+      "brightness": 3000
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        14,
+        15,
+        16
+      ],
+      "brightness": 3130
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        14,
+        15,
+        16
+      ],
+      "brightness": 3258
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        14,
+        15,
+        16
+      ],
+      "brightness": 3382
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        13,
+        14,
+        15
+      ],
+      "brightness": 3500
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        13,
+        14,
+        15
+      ],
+      "brightness": 3608
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        12,
+        13,
+        14
+      ],
+      "brightness": 3707
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        12,
+        13,
+        14
+      ],
+      "brightness": 3793
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        11,
+        12,
+        13
+      ],
+      "brightness": 3866
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        11,
+        12,
+        13
+      ],
+      "brightness": 3923
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        10,
+        11,
+        12
+      ],
+      "brightness": 3965
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        9,
+        10,
+        11
+      ],
+      "brightness": 3991
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        9,
+        10,
+        11
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        8,
+        9,
+        10
+      ],
+      "brightness": 3991
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        7,
+        8,
+        9
+      ],
+      "brightness": 3965
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        6,
+        7,
+        8
+      ],
+      "brightness": 3923
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        6,
+        7,
+        8
+      ],
+      "brightness": 3866
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        5,
+        6,
+        7
+      ],
+      "brightness": 3793
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        5,
+        6,
+        7
+      ],
+      "brightness": 3707
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        4,
+        5,
+        6
+      ],
+      "brightness": 3608
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        4,
+        5,
+        6
+      ],
+      "brightness": 3500
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        3,
+        4,
+        5
+      ],
+      "brightness": 3382
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        3,
+        4,
+        5
+      ],
+      "brightness": 3258
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        3,
+        4,
+        5
+      ],
+      "brightness": 3130
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        3,
+        4,
+        5
+      ],
+      "brightness": 3000
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        3,
+        4,
+        5
+      ],
+      "brightness": 3130
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        3,
+        4,
+        5
+      ],
+      "brightness": 3258
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        3,
+        4,
+        5
+      ],
+      "brightness": 3382
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        4,
+        5,
+        6
+      ],
+      "brightness": 3500
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        4,
+        5,
+        6
+      ],
+      "brightness": 3608
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        5,
+        6,
+        7
+      ],
+      "brightness": 3707
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        5,
+        6,
+        7
+      ],
+      "brightness": 3793
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        6,
+        7,
+        8
+      ],
+      "brightness": 3866
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        6,
+        7,
+        8
+      ],
+      "brightness": 3923
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        7,
+        8,
+        9
+      ],
+      "brightness": 3965
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        8,
+        9,
+        10
+      ],
+      "brightness": 3991
+    }
+  ]
+}

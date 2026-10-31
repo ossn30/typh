@@ -14,7 +14,7 @@ class GlyphDeviceStatus {
     this.isPhone3a = false,
     this.deviceModel = 'Unknown',
     this.manufacturer = 'Unknown',
-    this.deviceTarget = '',
+    this.deviceTarget = 'A059',
     this.isServiceConnected = false,
     this.isSessionOpened = false,
   });
@@ -25,7 +25,7 @@ class GlyphDeviceStatus {
       isPhone3a: map['isPhone3a'] as bool? ?? false,
       deviceModel: map['deviceModel'] as String? ?? 'Unknown',
       manufacturer: map['manufacturer'] as String? ?? 'Unknown',
-      deviceTarget: map['deviceTarget'] as String? ?? '',
+      deviceTarget: map['deviceTarget'] as String? ?? 'A059',
       isServiceConnected: map['isServiceConnected'] as bool? ?? false,
       isSessionOpened: map['isSessionOpened'] as bool? ?? false,
     );
@@ -65,6 +65,11 @@ class GlyphService {
       ValueNotifier<Set<int>>(<int>{});
 
   final ValueNotifier<bool> isBusyNotifier = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> isTorchOnNotifier = ValueNotifier<bool>(false);
+
+  final StreamController<double> _shakeStreamController =
+      StreamController<double>.broadcast();
+  Stream<double> get onShakeDetected => _shakeStreamController.stream;
 
   Future<void> _handleNativeCall(MethodCall call) async {
     if (call.method == 'onStatusChanged') {
@@ -73,6 +78,10 @@ class GlyphService {
     } else if (call.method == 'onBatteryChanged') {
       final data = call.arguments as Map<dynamic, dynamic>?;
       batteryNotifier.value = BatteryStatus.fromMap(data);
+    } else if (call.method == 'onShakeDetected') {
+      final data = call.arguments as Map<dynamic, dynamic>?;
+      final gForce = (data?['gForce'] as num?)?.toDouble() ?? 2.0;
+      _shakeStreamController.add(gForce);
     }
   }
 
@@ -137,6 +146,47 @@ class GlyphService {
     }
   }
 
+  /// Fire-and-forget single frame rendering without notifying UI listeners
+  void renderFrame(Set<int> channels, {int brightness = 4000}) {
+    _channel
+        .invokeMethod('toggleChannels', {
+          'channels': channels.toList(),
+          'brightness': brightness,
+        })
+        .catchError((e) {
+          debugPrint('GlyphService renderFrame error: $e');
+        });
+  }
+
+  /// Play a pre-compiled frame sequence on native Android thread for ultra-smooth 60fps playback
+  Future<bool> playAnimationSequence(
+    List<Map<String, dynamic>> frames, {
+    bool loop = true,
+  }) async {
+    try {
+      await _channel.invokeMethod('playAnimationSequence', {
+        'frames': frames,
+        'loop': loop,
+      });
+      return true;
+    } catch (e) {
+      debugPrint('GlyphService playAnimationSequence error: $e');
+      return false;
+    }
+  }
+
+  /// Stop any running native animation sequence and turn off lights
+  Future<bool> stopAnimationSequence() async {
+    try {
+      activeChannelsNotifier.value = <int>{};
+      await _channel.invokeMethod('stopAnimationSequence');
+      return true;
+    } catch (e) {
+      debugPrint('GlyphService stopAnimationSequence error: $e');
+      return false;
+    }
+  }
+
   /// Toggle a single channel on or off
   Future<bool> toggleChannel(int channelIndex, {int brightness = 4000}) async {
     final current = Set<int>.from(activeChannelsNotifier.value);
@@ -193,10 +243,44 @@ class GlyphService {
   Future<bool> turnOffAll() async {
     try {
       activeChannelsNotifier.value = <int>{};
+      isTorchOnNotifier.value = false;
       await _channel.invokeMethod('turnOff');
       return true;
     } catch (e) {
       debugPrint('GlyphService turnOffAll error: $e');
+      return false;
+    }
+  }
+
+  /// Turn torch on/off across all 36 channels
+  Future<bool> setTorch(bool turnOn, {int brightness = 4000}) async {
+    isTorchOnNotifier.value = turnOn;
+    if (turnOn) {
+      final allChannels = List.generate(36, (i) => i).toSet();
+      return await setChannels(allChannels, brightness: brightness);
+    } else {
+      return await turnOffAll();
+    }
+  }
+
+  /// Toggle torch on/off
+  Future<bool> toggleTorch({int brightness = 4000}) async {
+    return await setTorch(!isTorchOnNotifier.value, brightness: brightness);
+  }
+
+  /// Enable or configure native accelerometer shake detection
+  Future<bool> setShakeDetection({
+    required bool enabled,
+    double threshold = 2.0,
+  }) async {
+    try {
+      await _channel.invokeMethod('setShakeDetection', {
+        'enabled': enabled,
+        'threshold': threshold,
+      });
+      return true;
+    } catch (e) {
+      debugPrint('GlyphService setShakeDetection error: $e');
       return false;
     }
   }

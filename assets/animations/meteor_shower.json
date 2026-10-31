@@ -1,0 +1,197 @@
+{
+  "id": "meteor_shower",
+  "name": "Meteor Shower",
+  "description": "Rapid celestial shooting stars racing down Arcs A and B with impact flashes on Arc C",
+  "loop": true,
+  "frames": [
+    {
+      "durationMs": 28,
+      "channels": [
+        30
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        29,
+        30
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        28,
+        29
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        27,
+        28
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        26,
+        27
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        25,
+        26
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        24,
+        25
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        23,
+        24
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        22,
+        23
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        21,
+        22
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        20,
+        21
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 35,
+      "channels": [
+        17,
+        18,
+        19,
+        0,
+        1
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 40,
+      "channels": [
+        18,
+        19,
+        0
+      ],
+      "brightness": 2000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        31
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        32,
+        31
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        33,
+        32
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        34,
+        33
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        35,
+        34
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 35,
+      "channels": [
+        8,
+        9,
+        10,
+        11
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 40,
+      "channels": [
+        9,
+        10
+      ],
+      "brightness": 2000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        20,
+        25,
+        30,
+        31,
+        35
+      ],
+      "brightness": 2200
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        22,
+        28,
+        33
+      ],
+      "brightness": 1400
+    },
+    {
+      "durationMs": 50,
+      "channels": [],
+      "brightness": 0
+    }
+  ]
+}

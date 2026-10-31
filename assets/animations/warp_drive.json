@@ -1,0 +1,753 @@
+{
+  "id": "warp_drive",
+  "name": "Warp Drive",
+  "description": "Relativistic acceleration in Arc C culminating in a blinding lightspeed blast",
+  "loop": true,
+  "frames": [
+    {
+      "durationMs": 80,
+      "channels": [
+        0,
+        19,
+        18
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 79,
+      "channels": [
+        1,
+        0,
+        19
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 78,
+      "channels": [
+        2,
+        1,
+        0
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 77,
+      "channels": [
+        3,
+        2,
+        1
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 76,
+      "channels": [
+        4,
+        3,
+        2
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 75,
+      "channels": [
+        5,
+        4,
+        3
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 74,
+      "channels": [
+        6,
+        5,
+        4
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 73,
+      "channels": [
+        7,
+        6,
+        5
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 72,
+      "channels": [
+        8,
+        7,
+        6
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 71,
+      "channels": [
+        9,
+        8,
+        7
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 71,
+      "channels": [
+        10,
+        9,
+        8
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 70,
+      "channels": [
+        11,
+        10,
+        9
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 69,
+      "channels": [
+        12,
+        11,
+        10
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 68,
+      "channels": [
+        13,
+        12,
+        11
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 67,
+      "channels": [
+        14,
+        13,
+        12
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 66,
+      "channels": [
+        15,
+        14,
+        13
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 65,
+      "channels": [
+        16,
+        15,
+        14
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 64,
+      "channels": [
+        17,
+        16,
+        15
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 63,
+      "channels": [
+        18,
+        17,
+        16
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 62,
+      "channels": [
+        19,
+        18,
+        17
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 62,
+      "channels": [
+        0,
+        19,
+        18
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 61,
+      "channels": [
+        1,
+        0,
+        19
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 60,
+      "channels": [
+        2,
+        1,
+        0
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 59,
+      "channels": [
+        3,
+        2,
+        1
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 58,
+      "channels": [
+        4,
+        3,
+        2
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 57,
+      "channels": [
+        5,
+        4,
+        3
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 56,
+      "channels": [
+        6,
+        5,
+        4
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 55,
+      "channels": [
+        7,
+        6,
+        5
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 54,
+      "channels": [
+        8,
+        7,
+        6
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 53,
+      "channels": [
+        9,
+        8,
+        7
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 53,
+      "channels": [
+        10,
+        9,
+        8
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 52,
+      "channels": [
+        11,
+        10,
+        9
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 51,
+      "channels": [
+        12,
+        11,
+        10
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        13,
+        12,
+        11
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 49,
+      "channels": [
+        14,
+        13,
+        12
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 48,
+      "channels": [
+        15,
+        14,
+        13
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 47,
+      "channels": [
+        16,
+        15,
+        14
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 46,
+      "channels": [
+        17,
+        16,
+        15
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        18,
+        17,
+        16
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 44,
+      "channels": [
+        19,
+        18,
+        17
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 44,
+      "channels": [
+        0,
+        19,
+        18
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 43,
+      "channels": [
+        1,
+        0,
+        19
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 42,
+      "channels": [
+        2,
+        1,
+        0
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 41,
+      "channels": [
+        3,
+        2,
+        1
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 40,
+      "channels": [
+        4,
+        3,
+        2
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 39,
+      "channels": [
+        5,
+        4,
+        3
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 38,
+      "channels": [
+        6,
+        5,
+        4
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 37,
+      "channels": [
+        7,
+        6,
+        5
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 36,
+      "channels": [
+        8,
+        7,
+        6
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 35,
+      "channels": [
+        9,
+        8,
+        7
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 35,
+      "channels": [
+        10,
+        9,
+        8
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        11,
+        10,
+        9
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 33,
+      "channels": [
+        12,
+        11,
+        10
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        13,
+        12,
+        11
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 31,
+      "channels": [
+        14,
+        13,
+        12
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        15,
+        14,
+        13
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 29,
+      "channels": [
+        16,
+        15,
+        14
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        17,
+        16,
+        15
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 27,
+      "channels": [
+        18,
+        17,
+        16
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 26,
+      "channels": [
+        19,
+        18,
+        17
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 70,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 35,
+      "channels": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 35,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 35,
+      "channels": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 35,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 35,
+      "channels": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 35,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "brightness": 2500
+    },
+    {
+      "durationMs": 60,
+      "channels": [
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30
+      ],
+      "brightness": 1800
+    },
+    {
+      "durationMs": 70,
+      "channels": [
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "brightness": 1000
+    },
+    {
+      "durationMs": 80,
+      "channels": [],
+      "brightness": 0
+    }
+  ]
+}

@@ -1,11 +1,11 @@
 {
   "id": "strobe_alert",
   "name": "Strobe Alert",
-  "description": "High-intensity tactical multi-burst strobe warning",
+  "description": "High-cadence tactical multi-zone alert sequence",
   "loop": true,
   "frames": [
     {
-      "durationMs": 45,
+      "durationMs": 35,
       "channels": [
         0,
         1,
@@ -31,12 +31,12 @@
       "brightness": 4000
     },
     {
-      "durationMs": 45,
+      "durationMs": 35,
       "channels": [],
       "brightness": 0
     },
     {
-      "durationMs": 45,
+      "durationMs": 35,
       "channels": [
         0,
         1,
@@ -62,12 +62,12 @@
       "brightness": 4000
     },
     {
-      "durationMs": 45,
+      "durationMs": 35,
       "channels": [],
       "brightness": 0
     },
     {
-      "durationMs": 45,
+      "durationMs": 35,
       "channels": [
         0,
         1,
@@ -93,12 +93,12 @@
       "brightness": 4000
     },
     {
-      "durationMs": 45,
+      "durationMs": 35,
       "channels": [],
       "brightness": 0
     },
     {
-      "durationMs": 45,
+      "durationMs": 35,
       "channels": [
         20,
         21,
@@ -120,12 +120,12 @@
       "brightness": 4000
     },
     {
-      "durationMs": 45,
+      "durationMs": 35,
       "channels": [],
       "brightness": 0
     },
     {
-      "durationMs": 45,
+      "durationMs": 35,
       "channels": [
         20,
         21,
@@ -147,12 +147,12 @@
       "brightness": 4000
     },
     {
-      "durationMs": 45,
+      "durationMs": 35,
       "channels": [],
       "brightness": 0
     },
     {
-      "durationMs": 45,
+      "durationMs": 35,
       "channels": [
         20,
         21,
@@ -174,12 +174,12 @@
       "brightness": 4000
     },
     {
-      "durationMs": 45,
+      "durationMs": 35,
       "channels": [],
       "brightness": 0
     },
     {
-      "durationMs": 60,
+      "durationMs": 45,
       "channels": [
         0,
         1,
@@ -221,12 +221,12 @@
       "brightness": 4000
     },
     {
-      "durationMs": 60,
+      "durationMs": 45,
       "channels": [],
       "brightness": 0
     },
     {
-      "durationMs": 60,
+      "durationMs": 45,
       "channels": [
         0,
         1,
@@ -268,12 +268,12 @@
       "brightness": 4000
     },
     {
-      "durationMs": 60,
+      "durationMs": 45,
       "channels": [],
       "brightness": 0
     },
     {
-      "durationMs": 350,
+      "durationMs": 220,
       "channels": [],
       "brightness": 0
     }

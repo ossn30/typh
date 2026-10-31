@@ -1,7 +1,10 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glyph/models/glyph_animation.dart';
 import 'package:glyph/models/glyph_channel.dart';
 import 'package:glyph/services/glyph_service.dart';
+import 'package:glyph/widgets/shake_torch_cards.dart';
 
 void main() {
   test('Phone 3a glyph channels configuration test', () {
@@ -178,5 +181,37 @@ void main() {
     expect(anim.frames[1].durationMs, equals(100));
     expect(anim.frames[1].channels, equals({20, 21}));
     expect(anim.frames[1].brightness, equals(4000));
+  });
+
+  test('Verify all 18 animations files exist and have valid frames', () {
+    final indexFile = File('assets/animations.json');
+    expect(indexFile.existsSync(), isTrue);
+    final indexData = json.decode(indexFile.readAsStringSync()) as List<dynamic>;
+    expect(indexData.length, greaterThanOrEqualTo(17));
+
+    for (final item in indexData) {
+      final map = item as Map<String, dynamic>;
+      final path = map['path'] as String;
+      final file = File(path);
+      expect(file.existsSync(), isTrue, reason: 'File $path must exist');
+
+      final content = json.decode(file.readAsStringSync()) as Map<String, dynamic>;
+      final anim = GlyphAnimation.fromFullJson(content, path: path);
+      expect(anim.frames.isNotEmpty, isTrue, reason: 'Animation ${anim.id} must have frames');
+      for (final frame in anim.frames) {
+        expect(frame.durationMs, greaterThan(0));
+        for (final ch in frame.channels) {
+          expect(ch >= 0 && ch <= 35, isTrue,
+              reason: 'Channel $ch in ${anim.id} must be within 0..35');
+        }
+      }
+    }
+  });
+
+  test('ShakeIntensityPreset values and threshold boundaries test', () {
+    expect(ShakeIntensityPreset.low.threshold, equals(1.2));
+    expect(ShakeIntensityPreset.medium.threshold, equals(2.2));
+    expect(ShakeIntensityPreset.high.threshold, equals(3.8));
+    expect(ShakeIntensityPreset.values.length, equals(3));
   });
 }

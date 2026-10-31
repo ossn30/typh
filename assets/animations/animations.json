@@ -1,50 +1,127 @@
 [
   {
-    "id": "cyber_chase",
-    "name": "Cyber Chase",
-    "description": "High-velocity comet beam racing through arcs C, A, and B",
-    "icon": "speed",
-    "path": "assets/animations/cyber_chase.json"
-  },
-  {
     "id": "breathing_pulse",
     "name": "Breathing Pulse",
-    "description": "Calming organic pulse expanding and fading softly",
+    "description": "Continuous organic sine-wave pulse with fluid brightness transitions",
     "icon": "air",
     "path": "assets/animations/breathing_pulse.json"
   },
   {
+    "id": "cyber_chase",
+    "name": "Cyber Chase",
+    "description": "High-velocity 3-LED comet beam streaming around all arcs",
+    "icon": "speed",
+    "path": "assets/animations/cyber_chase.json"
+  },
+  {
+    "id": "warp_drive",
+    "name": "Warp Drive",
+    "description": "Relativistic acceleration in Arc C culminating in a blinding lightspeed blast",
+    "icon": "rocket_launch",
+    "path": "assets/animations/warp_drive.json"
+  },
+  {
+    "id": "matrix_rain",
+    "name": "Matrix Rain",
+    "description": "Digital phosphor stream cascading down Arc A, splitting through Arc C, into Arc B",
+    "icon": "terminal",
+    "path": "assets/animations/matrix_rain.json"
+  },
+  {
+    "id": "night_rider",
+    "name": "Night Rider",
+    "description": "Iconic high-speed cybernetic visor scanner bouncing back and forth on Arc A",
+    "icon": "view_column",
+    "path": "assets/animations/night_rider.json"
+  },
+  {
+    "id": "supernova",
+    "name": "Supernova",
+    "description": "Gravitational core collapse followed by a cosmic 36-channel explosive shockwave",
+    "icon": "flare",
+    "path": "assets/animations/supernova.json"
+  },
+  {
+    "id": "police_interceptor",
+    "name": "Police Interceptor",
+    "description": "Tactical emergency strobe with alternating wig-wag bursts and a 360-degree siren sweep",
+    "icon": "local_police",
+    "path": "assets/animations/police_interceptor.json"
+  },
+  {
     "id": "heartbeat",
     "name": "Heartbeat",
-    "description": "Rhythmic cardiac double-beat with resting pause",
+    "description": "Real ECG cardiac double-pulse with natural anatomical rhythm",
     "icon": "favorite",
     "path": "assets/animations/heartbeat.json"
   },
   {
+    "id": "pendulum_swing",
+    "name": "Pendulum Swing",
+    "description": "Physics-driven harmonic pendulum oscillation sweeping along the lower arc",
+    "icon": "hourglass_bottom",
+    "path": "assets/animations/pendulum_swing.json"
+  },
+  {
+    "id": "meteor_shower",
+    "name": "Meteor Shower",
+    "description": "Rapid celestial shooting stars racing down Arcs A and B with impact flashes on Arc C",
+    "icon": "auto_awesome",
+    "path": "assets/animations/meteor_shower.json"
+  },
+  {
+    "id": "sound_ripple",
+    "name": "Sound Ripple",
+    "description": "Acoustic drop impact sending symmetrical waves orbiting around Arc C into Arc B",
+    "icon": "waves",
+    "path": "assets/animations/sound_ripple.json"
+  },
+  {
     "id": "radar_scanner",
     "name": "Radar Scanner",
-    "description": "Sweeping radar beam across Arc C with target blips on A & B",
+    "description": "Rotating circular radar antenna with smooth target blips on A & B",
     "icon": "radar",
     "path": "assets/animations/radar_scanner.json"
   },
   {
+    "id": "quantum_flux",
+    "name": "Quantum Flux",
+    "description": "Entangled subatomic particles tunneling probabilistically across all glyph channels",
+    "icon": "blur_on",
+    "path": "assets/animations/quantum_flux.json"
+  },
+  {
+    "id": "digital_clock",
+    "name": "Digital Clock",
+    "description": "Precision clockwork second hand sweeping around Arc C with hour chime pulses",
+    "icon": "schedule",
+    "path": "assets/animations/digital_clock.json"
+  },
+  {
+    "id": "snake_game",
+    "name": "Snake Game",
+    "description": "Retro 8-bit snake crawling across Arc C, hunting food pellets on Arc B and growing",
+    "icon": "videogame_asset",
+    "path": "assets/animations/snake_game.json"
+  },
+  {
     "id": "equalizer_wave",
     "name": "Equalizer Wave",
-    "description": "Punchy audio graphic equalizer bouncing to the rhythm",
+    "description": "Punchy graphic equalizer audio rhythm with dynamic level bounce",
     "icon": "graphic_eq",
     "path": "assets/animations/equalizer_wave.json"
   },
   {
     "id": "strobe_alert",
     "name": "Strobe Alert",
-    "description": "High-intensity tactical multi-burst strobe warning",
+    "description": "High-cadence tactical multi-zone alert sequence",
     "icon": "flash_on",
     "path": "assets/animations/strobe_alert.json"
   },
   {
     "id": "orbit_spin",
     "name": "Orbit Spin",
-    "description": "Dual counter-orbiting binary nodes with synchronized pulses",
+    "description": "Dual counter-orbiting binary nodes spinning at 31 frames per second",
     "icon": "sync",
     "path": "assets/animations/orbit_spin.json"
   }

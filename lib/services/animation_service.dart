@@ -82,17 +82,47 @@ class AnimationService {
     final full = await loadFullAnimation(meta);
     if (full == null || full.frames.isEmpty) return;
 
-    // Increment session ID to cancel any in-flight playback loops
+    // Increment session ID to cancel any in-flight playback sessions
     _playbackSessionId++;
     final currentSession = _playbackSessionId;
 
     currentPlayingIdNotifier.value = full.id;
     isPlayingNotifier.value = true;
 
-    _runPlaybackLoop(full, currentSession);
+    final framesData = full.frames
+        .map((f) => {
+              'durationMs': f.durationMs,
+              'channels': f.channels.toList(),
+              'brightness': f.brightness,
+            })
+        .toList();
+
+    // Trigger native execution on dedicated high-priority thread for silky smooth playback
+    final nativeStarted = await _glyph.playAnimationSequence(
+      framesData,
+      loop: full.loop,
+    );
+
+    if (nativeStarted) {
+      if (!full.loop) {
+        final totalDurationMs = full.frames.fold<int>(
+          0,
+          (sum, f) => sum + f.durationMs,
+        );
+        Future.delayed(Duration(milliseconds: totalDurationMs), () {
+          if (_playbackSessionId == currentSession && isPlayingNotifier.value) {
+            stopAnimation();
+          }
+        });
+      }
+      return;
+    }
+
+    // Drift-compensating fallback in Dart using renderFrame
+    _runPlaybackLoopDart(full, currentSession);
   }
 
-  void _runPlaybackLoop(GlyphAnimation animation, int sessionId) async {
+  void _runPlaybackLoopDart(GlyphAnimation animation, int sessionId) async {
     while (!_isDisposed &&
         _playbackSessionId == sessionId &&
         isPlayingNotifier.value) {
@@ -103,7 +133,8 @@ class AnimationService {
           return;
         }
 
-        await _glyph.setChannels(frame.channels, brightness: frame.brightness);
+        // Fire-and-forget renderFrame without await or notifying UI listeners
+        _glyph.renderFrame(frame.channels, brightness: frame.brightness);
 
         final waitDuration = Duration(
           milliseconds: frame.durationMs.clamp(16, 5000),
@@ -126,7 +157,7 @@ class AnimationService {
     _playbackSessionId++;
     currentPlayingIdNotifier.value = null;
     isPlayingNotifier.value = false;
-    await _glyph.turnOffAll();
+    await _glyph.stopAnimationSequence();
   }
 
   void dispose() {

@@ -1,0 +1,206 @@
+{
+  "id": "sound_ripple",
+  "name": "Sound Ripple",
+  "description": "Acoustic drop impact sending symmetrical waves orbiting around Arc C into Arc B",
+  "loop": true,
+  "frames": [
+    {
+      "durationMs": 30,
+      "channels": [
+        30
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        27
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        24
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        21
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        20
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        0
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        1,
+        19
+      ],
+      "brightness": 3800
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        2,
+        18,
+        1,
+        19
+      ],
+      "brightness": 3800
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        3,
+        17,
+        2,
+        18
+      ],
+      "brightness": 3800
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        4,
+        16,
+        3,
+        17
+      ],
+      "brightness": 3800
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        5,
+        15,
+        4,
+        16
+      ],
+      "brightness": 3800
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        6,
+        14,
+        5,
+        15
+      ],
+      "brightness": 3800
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        7,
+        13,
+        6,
+        14
+      ],
+      "brightness": 3800
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        8,
+        12,
+        7,
+        13
+      ],
+      "brightness": 3800
+    },
+    {
+      "durationMs": 32,
+      "channels": [
+        9,
+        11,
+        8,
+        12
+      ],
+      "brightness": 3800
+    },
+    {
+      "durationMs": 35,
+      "channels": [
+        9,
+        10
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        31
+      ],
+      "brightness": 3500
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        32
+      ],
+      "brightness": 3500
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        33
+      ],
+      "brightness": 3500
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        34
+      ],
+      "brightness": 3500
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        35
+      ],
+      "brightness": 3500
+    },
+    {
+      "durationMs": 40,
+      "channels": [
+        0,
+        5,
+        10,
+        15
+      ],
+      "brightness": 2000
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        2,
+        7,
+        12,
+        17
+      ],
+      "brightness": 1200
+    },
+    {
+      "durationMs": 60,
+      "channels": [],
+      "brightness": 0
+    }
+  ]
+}

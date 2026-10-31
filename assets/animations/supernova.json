@@ -1,0 +1,306 @@
+{
+  "id": "supernova",
+  "name": "Supernova",
+  "description": "Gravitational core collapse followed by a cosmic 36-channel explosive shockwave",
+  "loop": true,
+  "frames": [
+    {
+      "durationMs": 40,
+      "channels": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "brightness": 3700
+    },
+    {
+      "durationMs": 40,
+      "channels": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17
+      ],
+      "brightness": 3400
+    },
+    {
+      "durationMs": 40,
+      "channels": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "brightness": 3100
+    },
+    {
+      "durationMs": 40,
+      "channels": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "brightness": 2800
+    },
+    {
+      "durationMs": 40,
+      "channels": [
+        8,
+        9,
+        10,
+        11
+      ],
+      "brightness": 2500
+    },
+    {
+      "durationMs": 25,
+      "channels": [
+        9,
+        10
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 25,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 25,
+      "channels": [
+        9,
+        10
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 25,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 25,
+      "channels": [
+        9,
+        10
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 25,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 25,
+      "channels": [
+        9,
+        10
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 25,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 60,
+      "channels": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "brightness": 3500
+    },
+    {
+      "durationMs": 40,
+      "channels": [
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 45,
+      "channels": [
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "brightness": 2800
+    },
+    {
+      "durationMs": 50,
+      "channels": [
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        33,
+        34,
+        35
+      ],
+      "brightness": 1800
+    },
+    {
+      "durationMs": 60,
+      "channels": [
+        30,
+        35
+      ],
+      "brightness": 1000
+    },
+    {
+      "durationMs": 80,
+      "channels": [],
+      "brightness": 0
+    }
+  ]
+}

@@ -5,6 +5,10 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.BatteryManager
 import android.os.Build
 import android.util.Log
@@ -30,6 +34,51 @@ class MainActivity : FlutterActivity() {
     private var isCharging = false
     private var batteryLevel = 0
     private var batteryReceiverRegistered = false
+
+    // Native High-Speed Animation Sequence Player
+    private data class CompiledFrame(val frame: GlyphFrame?, val durationMs: Long)
+    private var animationThread: Thread? = null
+    @Volatile private var isAnimationRunning = false
+
+    // Shake for Glyph Torch Detector
+    private var sensorManager: SensorManager? = null
+    private var accelerometer: Sensor? = null
+    private var isShakeDetectionEnabled = false
+    private var shakeThresholdG = 2.0f
+    private var lastShakeTimestamp = 0L
+    private val SHAKE_DEBOUNCE_MS = 650L
+
+    private val shakeListener = object : SensorEventListener {
+        override fun onSensorChanged(event: SensorEvent?) {
+            if (event == null || !isShakeDetectionEnabled) return
+            if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
+                val x = event.values[0] / SensorManager.GRAVITY_EARTH
+                val y = event.values[1] / SensorManager.GRAVITY_EARTH
+                val z = event.values[2] / SensorManager.GRAVITY_EARTH
+                val gForce = Math.sqrt((x * x + y * y + z * z).toDouble()).toFloat()
+
+                if (gForce >= shakeThresholdG) {
+                    val now = System.currentTimeMillis()
+                    if (now - lastShakeTimestamp > SHAKE_DEBOUNCE_MS) {
+                        lastShakeTimestamp = now
+                        Log.d(TAG, "Shake detected: gForce=$gForce, threshold=$shakeThresholdG")
+                        runOnUiThread {
+                            try {
+                                methodChannel?.invokeMethod(
+                                    "onShakeDetected",
+                                    mapOf("gForce" to gForce)
+                                )
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Failed to invoke onShakeDetected: ${e.message}")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+    }
 
     companion object {
         private const val TAG = "TYPH_Glyph3a"
@@ -90,6 +139,19 @@ class MainActivity : FlutterActivity() {
                 }
                 "closeSession" -> {
                     closeSession(result)
+                }
+                "playAnimationSequence" -> {
+                    val frames = call.argument<List<Map<String, Any>>>("frames") ?: emptyList()
+                    val loop = call.argument<Boolean>("loop") ?: true
+                    playAnimationSequence(frames, loop, result)
+                }
+                "stopAnimationSequence" -> {
+                    stopAnimationSequence(result)
+                }
+                "setShakeDetection" -> {
+                    val enabled = call.argument<Boolean>("enabled") ?: false
+                    val threshold = (call.argument<Number>("threshold"))?.toDouble() ?: 2.0
+                    setShakeDetection(enabled, threshold, result)
                 }
                 else -> {
                     result.notImplemented()
@@ -203,7 +265,118 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    private fun stopCurrentAnimation() {
+        isAnimationRunning = false
+        val t = animationThread
+        if (t != null && t.isAlive) {
+            t.interrupt()
+            try {
+                t.join(250)
+            } catch (_: Exception) {}
+        }
+        animationThread = null
+    }
+
+    private fun playAnimationSequence(
+        framesRaw: List<Map<String, Any>>,
+        loop: Boolean,
+        result: MethodChannel.Result
+    ) {
+        val gm = mGM
+        if (gm == null) {
+            result.error("NOT_INITIALIZED", "GlyphManager not initialized", null)
+            return
+        }
+
+        stopCurrentAnimation()
+
+        if (framesRaw.isEmpty()) {
+            try {
+                gm.turnOff()
+            } catch (_: Exception) {}
+            result.success(true)
+            return
+        }
+
+        // Pre-build all GlyphFrame objects once so playback has ZERO object creation/JNI allocation overhead!
+        val compiledFrames = ArrayList<CompiledFrame>(framesRaw.size)
+        for (fMap in framesRaw) {
+            val durationMs = (fMap["durationMs"] as? Number)?.toLong() ?: 32L
+            @Suppress("UNCHECKED_CAST")
+            val channels = (fMap["channels"] as? List<*>)?.mapNotNull { (it as? Number)?.toInt() } ?: emptyList()
+            val brightness = ((fMap["brightness"] as? Number)?.toInt() ?: 4000).coerceIn(0, 4000)
+
+            val frame: GlyphFrame? = if (channels.isEmpty()) {
+                null
+            } else {
+                val builder = GlyphFrame.Builder(Glyph.DEVICE_24111)
+                for (ch in channels) {
+                    if (ch in 0..35) {
+                        if (brightness == 4000) {
+                            builder.buildChannel(ch)
+                        } else {
+                            builder.buildChannel(ch, brightness)
+                        }
+                    }
+                }
+                builder.build()
+            }
+            compiledFrames.add(CompiledFrame(frame, durationMs.coerceAtLeast(10L)))
+        }
+
+        isAnimationRunning = true
+        val thread = Thread {
+            try {
+                while (isAnimationRunning && !Thread.currentThread().isInterrupted) {
+                    for (cf in compiledFrames) {
+                        if (!isAnimationRunning || Thread.currentThread().isInterrupted) break
+                        val start = System.currentTimeMillis()
+                        try {
+                            if (cf.frame == null) {
+                                gm.turnOff()
+                            } else {
+                                gm.toggle(cf.frame)
+                            }
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Frame toggle error: ${e.message}")
+                        }
+                        val elapsed = System.currentTimeMillis() - start
+                        val sleepTime = cf.durationMs - elapsed
+                        if (sleepTime > 0) {
+                            Thread.sleep(sleepTime)
+                        }
+                    }
+                    if (!loop) break
+                }
+            } catch (_: InterruptedException) {
+                // Thread interrupted on stop
+            } finally {
+                if (!isAnimationRunning || !loop) {
+                    try {
+                        gm.turnOff()
+                    } catch (_: Exception) {}
+                }
+            }
+        }
+        thread.priority = Thread.MAX_PRIORITY
+        animationThread = thread
+        thread.start()
+
+        result.success(true)
+    }
+
+    private fun stopAnimationSequence(result: MethodChannel.Result) {
+        stopCurrentAnimation()
+        try {
+            mGM?.turnOff()
+        } catch (e: Exception) {
+            Log.w(TAG, "Error turning off on stop: ${e.message}")
+        }
+        result.success(true)
+    }
+
     private fun toggleChannels(channels: List<Int>, brightness: Int, result: MethodChannel.Result) {
+        stopCurrentAnimation()
         val gm = mGM
         if (gm == null) {
             result.error("NOT_INITIALIZED", "GlyphManager not initialized", null)
@@ -315,6 +488,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun turnOff(result: MethodChannel.Result) {
+        stopCurrentAnimation()
         try {
             mGM?.turnOff()
             result.success(true)
@@ -324,7 +498,33 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    private fun setShakeDetection(enabled: Boolean, threshold: Double, result: MethodChannel.Result) {
+        try {
+            isShakeDetectionEnabled = enabled
+            shakeThresholdG = threshold.toFloat()
+            if (sensorManager == null) {
+                sensorManager = getSystemService(Context.SENSOR_SERVICE) as? SensorManager
+                accelerometer = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+            }
+            if (enabled) {
+                accelerometer?.let {
+                    sensorManager?.unregisterListener(shakeListener)
+                    sensorManager?.registerListener(shakeListener, it, SensorManager.SENSOR_DELAY_UI)
+                    Log.d(TAG, "Shake detection registered with threshold: $shakeThresholdG")
+                }
+            } else {
+                sensorManager?.unregisterListener(shakeListener)
+                Log.d(TAG, "Shake detection unregistered")
+            }
+            result.success(true)
+        } catch (e: Exception) {
+            Log.e(TAG, "setShakeDetection error: ${e.message}", e)
+            result.error("SHAKE_ERROR", e.message, null)
+        }
+    }
+
     private fun closeSession(result: MethodChannel.Result) {
+        stopCurrentAnimation()
         try {
             mGM?.closeSession()
             isSessionOpened = false
@@ -337,6 +537,11 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onDestroy() {
+        stopCurrentAnimation()
+        try {
+            sensorManager?.unregisterListener(shakeListener)
+            isShakeDetectionEnabled = false
+        } catch (_: Exception) {}
         if (batteryReceiverRegistered) {
             try {
                 unregisterReceiver(batteryReceiver)

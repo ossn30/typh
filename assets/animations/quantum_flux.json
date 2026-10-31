@@ -1,0 +1,255 @@
+{
+  "id": "quantum_flux",
+  "name": "Quantum Flux",
+  "description": "Entangled subatomic particles tunneling probabilistically across all glyph channels",
+  "loop": true,
+  "frames": [
+    {
+      "durationMs": 34,
+      "channels": [
+        20,
+        21,
+        0,
+        1
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        20,
+        0
+      ],
+      "brightness": 2400
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        22,
+        23,
+        2,
+        3
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        22,
+        2
+      ],
+      "brightness": 2400
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        24,
+        25,
+        4,
+        5
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        24,
+        4
+      ],
+      "brightness": 2400
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        26,
+        27,
+        6,
+        7
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        26,
+        6
+      ],
+      "brightness": 2400
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        28,
+        29,
+        8,
+        9,
+        31,
+        32
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        28,
+        8,
+        31
+      ],
+      "brightness": 2400
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        30,
+        10,
+        11,
+        33,
+        34
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        30,
+        11,
+        34
+      ],
+      "brightness": 2400
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        12,
+        13,
+        34,
+        35
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        12,
+        34
+      ],
+      "brightness": 2400
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        14,
+        15,
+        32,
+        33
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        14,
+        32
+      ],
+      "brightness": 2400
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        16,
+        17,
+        31
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        16,
+        31
+      ],
+      "brightness": 2400
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        18,
+        19,
+        20,
+        21
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        18,
+        20
+      ],
+      "brightness": 2400
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        0,
+        1,
+        10,
+        11,
+        25,
+        26
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        0,
+        10,
+        25
+      ],
+      "brightness": 2400
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        4,
+        5,
+        14,
+        15,
+        28,
+        29
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        4,
+        14,
+        28
+      ],
+      "brightness": 2400
+    },
+    {
+      "durationMs": 34,
+      "channels": [
+        8,
+        9,
+        18,
+        19,
+        33,
+        34
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 28,
+      "channels": [
+        8,
+        18,
+        33
+      ],
+      "brightness": 2400
+    }
+  ]
+}

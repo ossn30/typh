@@ -1,0 +1,227 @@
+{
+  "id": "police_interceptor",
+  "name": "Police Interceptor",
+  "description": "Tactical emergency strobe with alternating wig-wag bursts and a 360-degree siren sweep",
+  "loop": true,
+  "frames": [
+    {
+      "durationMs": 35,
+      "channels": [
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 35,
+      "channels": [
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 35,
+      "channels": [
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 25,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 35,
+      "channels": [
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 35,
+      "channels": [
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 35,
+      "channels": [
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [],
+      "brightness": 0
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        6,
+        7,
+        8,
+        9
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        8,
+        9,
+        10,
+        11
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        10,
+        11,
+        12,
+        13
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        12,
+        13,
+        14,
+        15
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        14,
+        15,
+        16,
+        17
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        16,
+        17,
+        18,
+        19
+      ],
+      "brightness": 4000
+    },
+    {
+      "durationMs": 30,
+      "channels": [
+        18,
+        19,
+        0,
+        1
+      ],
+      "brightness": 4000
+    }
+  ]
+}
