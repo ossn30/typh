@@ -24,8 +24,6 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.nothing.glyph_3a"
-    private var mGM: GlyphManager? = null
-    private var mCallback: GlyphManager.Callback? = null
     private var isServiceConnected = false
     private var isSessionOpened = false
     private var methodChannel: MethodChannel? = null
@@ -153,6 +151,11 @@ class MainActivity : FlutterActivity() {
                     val threshold = (call.argument<Number>("threshold"))?.toDouble() ?: 2.0
                     setShakeDetection(enabled, threshold, result)
                 }
+                "syncBackgroundSettings" -> {
+                    @Suppress("UNCHECKED_CAST")
+                    val settings = call.arguments as? Map<String, Any?> ?: emptyMap()
+                    syncBackgroundSettings(settings, result)
+                }
                 else -> {
                     result.notImplemented()
                 }
@@ -202,8 +205,8 @@ class MainActivity : FlutterActivity() {
             "deviceModel" to Build.MODEL,
             "manufacturer" to Build.MANUFACTURER,
             "deviceTarget" to Glyph.DEVICE_24111,
-            "isServiceConnected" to isServiceConnected,
-            "isSessionOpened" to isSessionOpened
+            "isServiceConnected" to GlyphNativeManager.isServiceConnected,
+            "isSessionOpened" to GlyphNativeManager.isSessionOpened
         )
     }
 
@@ -217,47 +220,77 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    private fun startGlyphBackgroundService() {
+        try {
+            val serviceIntent = Intent(applicationContext, GlyphBackgroundService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                applicationContext.startForegroundService(serviceIntent)
+            } else {
+                applicationContext.startService(serviceIntent)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start background service: ${e.message}", e)
+        }
+    }
+
+    private fun syncBackgroundSettings(settings: Map<String, Any?>, result: MethodChannel.Result) {
+        try {
+            val prefs = getSharedPreferences("glyph_native_settings", Context.MODE_PRIVATE)
+            val editor = prefs.edit()
+
+            if (settings.containsKey("charging_animation_enabled")) {
+                editor.putBoolean("charging_enabled", settings["charging_animation_enabled"] as? Boolean ?: true)
+            }
+            if (settings.containsKey("charging_selected_arcs")) {
+                @Suppress("UNCHECKED_CAST")
+                val arcs = (settings["charging_selected_arcs"] as? List<*>)?.mapNotNull { it?.toString() }?.toSet() ?: setOf("C")
+                editor.putStringSet("selected_arcs", arcs)
+            }
+            if (settings.containsKey("charging_is_clockwise")) {
+                editor.putBoolean("is_clockwise", settings["charging_is_clockwise"] as? Boolean ?: true)
+            }
+            if (settings.containsKey("charging_is_combined")) {
+                editor.putBoolean("is_combined", settings["charging_is_combined"] as? Boolean ?: true)
+            }
+            if (settings.containsKey("charging_is_duration_always")) {
+                editor.putBoolean("is_duration_always", settings["charging_is_duration_always"] as? Boolean ?: true)
+            }
+            if (settings.containsKey("charging_timer_duration_seconds")) {
+                editor.putInt("timer_duration", (settings["charging_timer_duration_seconds"] as? Number)?.toInt() ?: 3)
+            }
+            if (settings.containsKey("charging_brightness")) {
+                editor.putInt("charging_brightness", (settings["charging_brightness"] as? Number)?.toInt() ?: 4000)
+            }
+            if (settings.containsKey("shake_torch_enabled")) {
+                editor.putBoolean("shake_torch_enabled", settings["shake_torch_enabled"] as? Boolean ?: false)
+            }
+            if (settings.containsKey("shake_threshold")) {
+                editor.putFloat("shake_threshold", (settings["shake_threshold"] as? Number)?.toFloat() ?: 2.0f)
+            }
+            if (settings.containsKey("torch_brightness")) {
+                editor.putInt("torch_brightness", (settings["torch_brightness"] as? Number)?.toInt() ?: 4000)
+            }
+            editor.apply()
+
+            startGlyphBackgroundService()
+            GlyphBackgroundService.instance?.syncSensorState()
+
+            result.success(true)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error syncing background settings: ${e.message}", e)
+            result.error("SYNC_ERROR", e.message, null)
+        }
+    }
+
     private fun initGlyph(result: MethodChannel.Result) {
         try {
-            if (mGM == null) {
-                mGM = GlyphManager.getInstance(applicationContext)
-            }
-
-            mCallback = object : GlyphManager.Callback {
-                override fun onServiceConnected(componentName: ComponentName?) {
-                    Log.d(TAG, "onServiceConnected: $componentName")
-                    isServiceConnected = true
-
-                    try {
-                        val regSuccess = mGM?.register(Glyph.DEVICE_24111) ?: false
-                        Log.d(TAG, "Registered DEVICE_24111: $regSuccess")
-
-                        mGM?.openSession()
-                        isSessionOpened = true
-                        Log.d(TAG, "Glyph session opened successfully.")
-                    } catch (e: GlyphException) {
-                        Log.e(TAG, "GlyphException opening session: ${e.message}", e)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Exception opening session: ${e.message}", e)
-                    }
-
-                    notifyStatusToFlutter()
-                }
-
-                override fun onServiceDisconnected(componentName: ComponentName?) {
-                    Log.d(TAG, "onServiceDisconnected: $componentName")
-                    isServiceConnected = false
-                    isSessionOpened = false
-                    try {
-                        mGM?.closeSession()
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error closing session on disconnect: ${e.message}")
-                    }
+            startGlyphBackgroundService()
+            GlyphNativeManager.initIfNeeded(applicationContext)
+            GlyphNativeManager.addConnectionListener {
+                runOnUiThread {
                     notifyStatusToFlutter()
                 }
             }
-
-            mGM?.init(mCallback)
             result.success(getDeviceStatusMap())
         } catch (e: Exception) {
             Log.e(TAG, "initGlyph failed: ${e.message}", e)
@@ -282,7 +315,7 @@ class MainActivity : FlutterActivity() {
         loop: Boolean,
         result: MethodChannel.Result
     ) {
-        val gm = mGM
+        val gm = GlyphNativeManager.glyphManager
         if (gm == null) {
             result.error("NOT_INITIALIZED", "GlyphManager not initialized", null)
             return
@@ -368,7 +401,7 @@ class MainActivity : FlutterActivity() {
     private fun stopAnimationSequence(result: MethodChannel.Result) {
         stopCurrentAnimation()
         try {
-            mGM?.turnOff()
+            GlyphNativeManager.glyphManager?.turnOff()
         } catch (e: Exception) {
             Log.w(TAG, "Error turning off on stop: ${e.message}")
         }
@@ -377,7 +410,7 @@ class MainActivity : FlutterActivity() {
 
     private fun toggleChannels(channels: List<Int>, brightness: Int, result: MethodChannel.Result) {
         stopCurrentAnimation()
-        val gm = mGM
+        val gm = GlyphNativeManager.glyphManager
         if (gm == null) {
             result.error("NOT_INITIALIZED", "GlyphManager not initialized", null)
             return
@@ -415,7 +448,7 @@ class MainActivity : FlutterActivity() {
         interval: Int,
         result: MethodChannel.Result
     ) {
-        val gm = mGM
+        val gm = GlyphNativeManager.glyphManager
         if (gm == null) {
             result.error("NOT_INITIALIZED", "GlyphManager not initialized", null)
             return
@@ -441,7 +474,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun toggleGroup(group: String, result: MethodChannel.Result) {
-        val gm = mGM
+        val gm = GlyphNativeManager.glyphManager
         if (gm == null) {
             result.error("NOT_INITIALIZED", "GlyphManager not initialized", null)
             return
@@ -469,7 +502,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun displayProgress(progress: Int, reverse: Boolean, result: MethodChannel.Result) {
-        val gm = mGM
+        val gm = GlyphNativeManager.glyphManager
         if (gm == null) {
             result.error("NOT_INITIALIZED", "GlyphManager not initialized", null)
             return
@@ -490,7 +523,7 @@ class MainActivity : FlutterActivity() {
     private fun turnOff(result: MethodChannel.Result) {
         stopCurrentAnimation()
         try {
-            mGM?.turnOff()
+            GlyphNativeManager.glyphManager?.turnOff()
             result.success(true)
         } catch (e: Exception) {
             Log.e(TAG, "turnOff error: ${e.message}", e)
@@ -526,7 +559,7 @@ class MainActivity : FlutterActivity() {
     private fun closeSession(result: MethodChannel.Result) {
         stopCurrentAnimation()
         try {
-            mGM?.closeSession()
+            GlyphNativeManager.glyphManager?.closeSession()
             isSessionOpened = false
             notifyStatusToFlutter()
             result.success(true)
@@ -550,21 +583,9 @@ class MainActivity : FlutterActivity() {
             }
             batteryReceiverRegistered = false
         }
-        try {
-            mGM?.turnOff()
-            if (isSessionOpened) {
-                mGM?.closeSession()
-                isSessionOpened = false
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "onDestroy cleanup error: ${e.message}")
-        }
-        try {
-            mGM?.unInit()
-            mGM = null
-        } catch (e: Exception) {
-            Log.e(TAG, "onDestroy unInit error: ${e.message}")
-        }
+        // Note: We intentionally do NOT unInit GlyphManager here.
+        // GlyphBackgroundService continues running in the background to handle
+        // persistent charging animations and gesture torch while the app is closed.
         super.onDestroy()
     }
 }

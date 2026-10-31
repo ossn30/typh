@@ -268,6 +268,18 @@ class GlyphService {
     return await setTorch(!isTorchOnNotifier.value, brightness: brightness);
   }
 
+  /// Sync user settings to native Android background service so features
+  /// keep working even when the app is closed or phone is restarted.
+  Future<bool> syncBackgroundSettings(Map<String, dynamic> settings) async {
+    try {
+      await _channel.invokeMethod('syncBackgroundSettings', settings);
+      return true;
+    } catch (e) {
+      debugPrint('GlyphService syncBackgroundSettings error: $e');
+      return false;
+    }
+  }
+
   /// Enable or configure native accelerometer shake detection
   Future<bool> setShakeDetection({
     required bool enabled,
