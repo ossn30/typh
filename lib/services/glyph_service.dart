@@ -71,6 +71,16 @@ class GlyphService {
       StreamController<double>.broadcast();
   Stream<double> get onShakeDetected => _shakeStreamController.stream;
 
+  final StreamController<Map<String, dynamic>> _hardwareKeyStreamController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  Stream<Map<String, dynamic>> get onHardwareKeyCaptured =>
+      _hardwareKeyStreamController.stream;
+
+  final StreamController<Map<String, dynamic>> _essentialKeyEventStreamController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  Stream<Map<String, dynamic>> get onEssentialKeyEvent =>
+      _essentialKeyEventStreamController.stream;
+
   Future<void> _handleNativeCall(MethodCall call) async {
     if (call.method == 'onStatusChanged') {
       final data = call.arguments as Map<dynamic, dynamic>?;
@@ -82,6 +92,16 @@ class GlyphService {
       final data = call.arguments as Map<dynamic, dynamic>?;
       final gForce = (data?['gForce'] as num?)?.toDouble() ?? 2.0;
       _shakeStreamController.add(gForce);
+    } else if (call.method == 'onHardwareKeyCaptured') {
+      final data = call.arguments as Map<dynamic, dynamic>?;
+      if (data != null) {
+        _hardwareKeyStreamController.add(Map<String, dynamic>.from(data));
+      }
+    } else if (call.method == 'onEssentialKeyEvent') {
+      final data = call.arguments as Map<dynamic, dynamic>?;
+      if (data != null) {
+        _essentialKeyEventStreamController.add(Map<String, dynamic>.from(data));
+      }
     }
   }
 
@@ -474,6 +494,116 @@ class GlyphService {
       await _channel.invokeMethod('closeSession');
     } catch (e) {
       debugPrint('GlyphService closeSession error: $e');
+    }
+  }
+
+  /// Check whether Nothing Phone (3a) Essential packages are disabled via ADB
+  Future<Map<String, dynamic>> checkEssentialPackagesDisabled() async {
+    try {
+      final res = await _channel.invokeMethod<Map<dynamic, dynamic>>(
+        'checkEssentialPackagesDisabled',
+      );
+      if (res != null) {
+        return Map<String, dynamic>.from(res);
+      }
+    } catch (e) {
+      debugPrint('GlyphService checkEssentialPackagesDisabled error: $e');
+    }
+    return {
+      'allDisabled': false,
+      'recorderDisabled': false,
+      'spaceDisabled': false,
+    };
+  }
+
+  /// Start listening for hardware key events
+  Future<bool> startHardwareKeyListening() async {
+    try {
+      final res =
+          await _channel.invokeMethod<bool>('startHardwareKeyListening');
+      return res ?? false;
+    } catch (e) {
+      debugPrint('GlyphService startHardwareKeyListening error: $e');
+      return false;
+    }
+  }
+
+  /// Stop listening for hardware key events
+  Future<bool> stopHardwareKeyListening() async {
+    try {
+      final res = await _channel.invokeMethod<bool>('stopHardwareKeyListening');
+      return res ?? false;
+    } catch (e) {
+      debugPrint('GlyphService stopHardwareKeyListening error: $e');
+      return false;
+    }
+  }
+
+  /// Execute an Essential Key action natively
+  Future<Map<String, dynamic>> executeKeyAction(
+    String action, [
+    Map<String, dynamic>? params,
+  ]) async {
+    try {
+      final res = await _channel.invokeMethod<Map<dynamic, dynamic>>(
+        'executeKeyAction',
+        {'action': action, 'params': params ?? {}},
+      );
+      if (res != null) {
+        return Map<String, dynamic>.from(res);
+      }
+    } catch (e) {
+      debugPrint('GlyphService executeKeyAction error: $e');
+    }
+    return {'status': 'error'};
+  }
+
+  /// Set window / system brightness (0.0 to 1.0)
+  Future<bool> setSystemBrightness(double brightness) async {
+    try {
+      final res = await _channel.invokeMethod<bool>(
+        'setSystemBrightness',
+        {'brightness': brightness.clamp(0.01, 1.0)},
+      );
+      return res ?? false;
+    } catch (e) {
+      debugPrint('GlyphService setSystemBrightness error: $e');
+      return false;
+    }
+  }
+
+  /// Get window / system brightness (0.0 to 1.0)
+  Future<double> getSystemBrightness() async {
+    try {
+      final res = await _channel.invokeMethod<double>('getSystemBrightness');
+      return res ?? 0.5;
+    } catch (e) {
+      debugPrint('GlyphService getSystemBrightness error: $e');
+      return 0.5;
+    }
+  }
+
+  /// Check whether GlyphAccessibilityService is running
+  Future<bool> isAccessibilityServiceEnabled() async {
+    try {
+      final res =
+          await _channel.invokeMethod<bool>('isAccessibilityServiceEnabled');
+      return res ?? false;
+    } catch (e) {
+      debugPrint('GlyphService isAccessibilityServiceEnabled error: $e');
+      return false;
+    }
+  }
+
+  /// Open Android Accessibility Settings
+  Future<bool> openAccessibilitySettings() async {
+    try {
+      final res =
+          await _channel.invokeMethod<bool>('openAccessibilitySettings');
+      return res ?? false;
+    } catch (e) {
+      debugPrint('GlyphService openAccessibilitySettings error: $e');
+      return false;
     }
   }
 }

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Glyph 3a</string>
+    <string name="accessibility_service_description">Enables hardware Essential Key remapping to trigger custom actions, screen lock, power menu, and controls across the system.</string>
+</resources>
+

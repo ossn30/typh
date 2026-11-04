@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:glyph/colors.dart';
 import 'compose_screen.dart';
 import 'home_screen.dart';
+import 'key_remapper_screen.dart';
 import 'notifications_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -32,6 +33,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         index: _currentIndex,
         children: [
           const HomeScreen(),
+          const KeyRemapperScreen(),
           const NotificationsScreen(),
           ComposeScreen(onAnimationSaved: () => _onTabTapped(0)),
         ],
@@ -54,8 +56,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ),
       ),
       padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
+        left: 14,
+        right: 14,
         top: 8,
         bottom: math.max(10.0, bottomInset),
       ),
@@ -79,6 +81,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             Expanded(
               child: _buildNavItem(
                 index: 1,
+                icon: Icons.smart_button_outlined,
+                activeIcon: Icons.smart_button_rounded,
+                label: 'KEYMAP',
+              ),
+            ),
+            Expanded(
+              child: _buildNavItem(
+                index: 2,
                 icon: Icons.notifications_none_rounded,
                 activeIcon: Icons.notifications_rounded,
                 label: 'ALERTS',
@@ -86,7 +96,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             ),
             Expanded(
               child: _buildNavItem(
-                index: 2,
+                index: 3,
                 icon: Icons.auto_awesome_outlined,
                 activeIcon: Icons.auto_awesome_rounded,
                 label: 'COMPOSE',
@@ -124,25 +134,26 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               Icon(
                 isSelected ? activeIcon : icon,
                 color: isSelected ? selectedColor : const Color(0xFF757780),
-                size: 18,
+                size: 17,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 4),
               Text(
                 label,
                 maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: isSelected ? Colors.white : const Color(0xFF757780),
-                  fontSize: 11,
+                  fontSize: 10,
                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                   fontFamily: 'ndot',
-                  letterSpacing: 0.8,
+                  letterSpacing: 0.6,
                 ),
               ),
               if (isSelected) ...[
-                const SizedBox(width: 5),
+                const SizedBox(width: 3),
                 Container(
-                  width: 4,
-                  height: 4,
+                  width: 3.5,
+                  height: 3.5,
                   decoration: const BoxDecoration(
                     color: selectedColor,
                     shape: BoxShape.circle,

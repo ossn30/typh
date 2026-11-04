@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/setup_screen.dart';
+import 'services/key_action_service.dart';
 import 'services/settings_service.dart';
 
 void main() async {
@@ -9,6 +10,7 @@ void main() async {
 
   // Initialize persisted user settings before running the app
   await SettingsService.instance.init();
+  KeyActionService.instance.init();
 
   // Dark status bar and navigation bar styling
   SystemChrome.setSystemUIOverlayStyle(
@@ -29,6 +31,7 @@ class Glyph3aApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: KeyActionService.navigatorKey,
       title: 'Nothing Glyph 3a',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

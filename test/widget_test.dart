@@ -1,12 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glyph/models/glyph_animation.dart';
 import 'package:glyph/models/glyph_channel.dart';
 import 'package:glyph/models/installed_app.dart';
+import 'package:glyph/models/key_action.dart';
 import 'package:glyph/screens/compose_screen.dart';
+import 'package:glyph/screens/key_remapper_screen.dart';
 import 'package:glyph/screens/main_navigation_screen.dart';
 import 'package:glyph/screens/notifications_screen.dart';
 import 'package:glyph/screens/setup_screen.dart';
@@ -365,8 +368,15 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('HOME'), findsOneWidget);
+    expect(find.text('KEYMAP'), findsOneWidget);
     expect(find.text('ALERTS'), findsOneWidget);
     expect(find.text('COMPOSE'), findsOneWidget);
+
+    // Switch to Keymap
+    await tester.tap(find.text('KEYMAP'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byType(KeyRemapperScreen), findsOneWidget);
 
     // Switch to Compose
     await tester.tap(find.text('COMPOSE'));
@@ -546,5 +556,221 @@ void main() {
     );
     expect(ch50.length, equals(10));
     expect(ch50.containsAll(ch45), isTrue);
+  });
+
+  test('SettingsService essential key settings persistence', () async {
+    SharedPreferences.setMockInitialValues({});
+    final settings = SettingsService.instance;
+    await settings.init();
+
+    expect(settings.isEssentialKeyRemapEnabled, isFalse);
+    expect(settings.essentialKeyCode, isNull);
+    expect(settings.essentialScanCode, isNull);
+    expect(settings.essentialKeyName, isNull);
+    expect(settings.essentialPackagesDisabled, isFalse);
+
+    await settings.setEssentialKeyRemapEnabled(true);
+    await settings.setEssentialKeyCode(289);
+    await settings.setEssentialScanCode(301);
+    await settings.setEssentialKeyName('KEYCODE_NOTHING_ESSENTIAL');
+    await settings.setEssentialPackagesDisabled(true);
+
+    expect(settings.isEssentialKeyRemapEnabled, isTrue);
+    expect(settings.essentialKeyCode, equals(289));
+    expect(settings.essentialScanCode, equals(301));
+    expect(settings.essentialKeyName, equals('KEYCODE_NOTHING_ESSENTIAL'));
+    expect(settings.essentialPackagesDisabled, isTrue);
+  });
+
+  testWidgets('SetupScreen displays Essential Key Remap option and ADB wizard', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(const MethodChannel('com.nothing.glyph_3a'), (call) async {
+      if (call.method == 'checkEssentialPackagesDisabled') {
+        return {
+          'allDisabled': true,
+          'recorderDisabled': true,
+          'spaceDisabled': true,
+        };
+      }
+      return true;
+    });
+
+    SharedPreferences.setMockInitialValues({});
+    await SettingsService.instance.init();
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: SetupScreen(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('HARDWARE SETUP'), findsOneWidget);
+    expect(find.text('REMAP ESSENTIAL KEY (3A)'), findsOneWidget);
+    expect(find.text('NOTHING PHONE (3A) HARDWARE'), findsOneWidget);
+
+    // Initially ADB wizard is not shown
+    expect(find.text('DISABLE SYSTEM APPS (ADB)'), findsNothing);
+
+    // Toggle Essential Key Remapper ON (3rd switch)
+    final switches = find.byType(CupertinoSwitch);
+    expect(switches, findsNWidgets(3));
+    await tester.tap(switches.at(2));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    // Verify ADB commands are displayed
+    expect(find.text('DISABLE SYSTEM APPS (ADB)'), findsOneWidget);
+    expect(find.textContaining('com.nothing.ntessentialrecorder'), findsOneWidget);
+    expect(find.textContaining('com.nothing.ntessentialspace'), findsOneWidget);
+    expect(find.text('PRESS ESSENTIAL KEY'), findsOneWidget);
+
+    for (int i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('VERIFY ADB STATUS'), findsOneWidget);
+
+    // Test Setup Completion
+    await tester.tap(find.text('START USING GLYPH'));
+    for (int i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(SettingsService.instance.hasCompletedOnboarding, isTrue);
+    expect(SettingsService.instance.isEssentialKeyRemapEnabled, isTrue);
+  });
+
+  test('KeyActions catalog contains all 20 required actions and categories', () {
+    expect(KeyActions.all.length, greaterThanOrEqualTo(20));
+
+    final actionIds = KeyActions.all.map((a) => a.id).toSet();
+    expect(actionIds, containsAll([
+      'torch',
+      'rotation_lock',
+      'auto_brightness',
+      'ringer_mode',
+      'dnd',
+      'voice_assistant',
+      'lock_screen',
+      'wake_screen',
+      'brightness_slider',
+      'night_light',
+      'extra_dim',
+      'internet_panel',
+      'bluetooth_panel',
+      'volume_panel',
+      'power_menu',
+      'set_timer',
+      'read_aloud',
+      'copy_text',
+      'paste_text',
+      'calculator',
+    ]));
+
+    // Find by ID and type
+    expect(KeyActions.findById('torch').type, equals(KeyActionType.torch));
+    expect(KeyActions.findByType(KeyActionType.brightnessSlider).id, equals('brightness_slider'));
+  });
+
+  test('SettingsService action assignments and timings persistence', () async {
+    SharedPreferences.setMockInitialValues({});
+    final settings = SettingsService.instance;
+    await settings.init();
+
+    // Default values
+    expect(settings.singlePressAction, equals('torch'));
+    expect(settings.doublePressAction, equals('calculator'));
+    expect(settings.triplePressAction, equals('ringer_mode'));
+    expect(settings.longPressAction, equals('power_menu'));
+    expect(settings.multiPressGapMs, equals(350));
+    expect(settings.longPressHoldMs, equals(500));
+
+    // Custom assignments
+    await settings.setSinglePressAction('brightness_slider');
+    await settings.setDoublePressAction('lock_screen');
+    await settings.setTriplePressAction('voice_assistant');
+    await settings.setLongPressAction('volume_panel');
+    await settings.setMultiPressGapMs(400);
+    await settings.setLongPressHoldMs(650);
+
+    expect(settings.singlePressAction, equals('brightness_slider'));
+    expect(settings.doublePressAction, equals('lock_screen'));
+    expect(settings.triplePressAction, equals('voice_assistant'));
+    expect(settings.longPressAction, equals('volume_panel'));
+    expect(settings.multiPressGapMs, equals(400));
+    expect(settings.longPressHoldMs, equals(650));
+  });
+
+  testWidgets('KeyRemapperScreen renders Nothing OS style, timings, triggers and test action', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(const MethodChannel('com.nothing.glyph_3a'), (call) async {
+      if (call.method == 'checkEssentialPackagesDisabled') {
+        return {
+          'allDisabled': true,
+          'recorderDisabled': true,
+          'spaceDisabled': true,
+        };
+      }
+      if (call.method == 'executeKeyAction') {
+        return {'status': 'success', 'message': 'Action triggered'};
+      }
+      if (call.method == 'getSystemBrightness') {
+        return 0.5;
+      }
+      if (call.method == 'isAccessibilityServiceEnabled') {
+        return true;
+      }
+      return true;
+    });
+
+    SharedPreferences.setMockInitialValues({});
+    await SettingsService.instance.init();
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: KeyRemapperScreen(),
+      ),
+    );
+    for (int i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(find.text('KEYMAPPER'), findsOneWidget);
+    expect(find.text('TIMING & SENSITIVITY'), findsOneWidget);
+    expect(find.text('GAP BETWEEN PRESSES'), findsOneWidget);
+    expect(find.text('LONG PRESS HOLD TIME'), findsOneWidget);
+
+    expect(find.text('TRIGGER ACTIONS'), findsOneWidget);
+    expect(find.text('SINGLE PRESS'), findsOneWidget);
+    expect(find.text('DOUBLE PRESS'), findsOneWidget);
+    expect(find.text('TRIPLE PRESS'), findsOneWidget);
+    expect(find.text('LONG PRESS'), findsOneWidget);
+
+    // Verify TEST buttons exist for each trigger
+    expect(find.text('TEST'), findsNWidgets(4));
+
+    // Tap TEST on Single Press
+    await tester.tap(find.text('TEST').first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Verify CHANGE button opens Action Picker Sheet
+    expect(find.text('CHANGE'), findsNWidgets(4));
+    await tester.tap(find.text('CHANGE').first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('ASSIGN SINGLE PRESS'), findsOneWidget);
+    expect(find.text('Search actions...'), findsOneWidget);
   });
 }
