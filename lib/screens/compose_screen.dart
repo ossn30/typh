@@ -960,7 +960,7 @@ class _ComposeScreenState extends State<ComposeScreen>
                 top: 16,
                 left: 16,
                 right: 16,
-                bottom: 110, // accommodate bottom floating pill
+                bottom: 24,
               ),
               children: [
                 // 1. Interactive Glyph Visualizer (First at top)

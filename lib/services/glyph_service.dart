@@ -280,6 +280,58 @@ class GlyphService {
     }
   }
 
+  /// Query installed launchable applications from device
+  Future<List<Map<String, dynamic>>> getInstalledApps() async {
+    try {
+      final res = await _channel.invokeListMethod<dynamic>('getInstalledApps');
+      if (res == null) return [];
+      return res.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+    } catch (e) {
+      debugPrint('GlyphService getInstalledApps error: $e');
+      return [];
+    }
+  }
+
+  /// Check if Notification Access permission is granted
+  Future<bool> isNotificationAccessGranted() async {
+    try {
+      final res = await _channel.invokeMethod<bool>('isNotificationAccessGranted');
+      return res ?? false;
+    } catch (e) {
+      debugPrint('GlyphService isNotificationAccessGranted error: $e');
+      return false;
+    }
+  }
+
+  /// Open Android System Settings for Notification Access
+  Future<void> openNotificationAccessSettings() async {
+    try {
+      await _channel.invokeMethod('openNotificationAccessSettings');
+    } catch (e) {
+      debugPrint('GlyphService openNotificationAccessSettings error: $e');
+    }
+  }
+
+  /// Open Android System Settings for Notification Sounds & App Notifications
+  Future<void> openNotificationSoundSettings() async {
+    try {
+      await _channel.invokeMethod('openNotificationSoundSettings');
+    } catch (e) {
+      debugPrint('GlyphService openNotificationSoundSettings error: $e');
+    }
+  }
+
+  /// Sync notification alert animation rules to native NotificationListenerService
+  Future<bool> syncNotificationRules(Map<String, dynamic> data) async {
+    try {
+      await _channel.invokeMethod('syncNotificationRules', data);
+      return true;
+    } catch (e) {
+      debugPrint('GlyphService syncNotificationRules error: $e');
+      return false;
+    }
+  }
+
   /// Enable or configure native accelerometer shake detection
   Future<bool> setShakeDetection({
     required bool enabled,

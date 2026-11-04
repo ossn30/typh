@@ -5,12 +5,18 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.BatteryManager
 import android.os.Build
+import android.provider.Settings
+import android.util.Base64
 import android.util.Log
 import com.nothing.ketchum.Common
 import com.nothing.ketchum.Glyph
@@ -21,6 +27,7 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.io.ByteArrayOutputStream
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.nothing.glyph_3a"
@@ -156,6 +163,25 @@ class MainActivity : FlutterActivity() {
                     val settings = call.arguments as? Map<String, Any?> ?: emptyMap()
                     syncBackgroundSettings(settings, result)
                 }
+                "getInstalledApps" -> {
+                    getInstalledApps(result)
+                }
+                "isNotificationAccessGranted" -> {
+                    result.success(isNotificationAccessGranted())
+                }
+                "openNotificationAccessSettings" -> {
+                    openNotificationAccessSettings()
+                    result.success(true)
+                }
+                "openNotificationSoundSettings" -> {
+                    openNotificationSoundSettings()
+                    result.success(true)
+                }
+                "syncNotificationRules" -> {
+                    @Suppress("UNCHECKED_CAST")
+                    val data = call.arguments as? Map<String, Any?> ?: emptyMap()
+                    syncNotificationRules(data, result)
+                }
                 else -> {
                     result.notImplemented()
                 }
@@ -220,7 +246,16 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    private val connectionListener: (Boolean) -> Unit = {
+        runOnUiThread {
+            notifyStatusToFlutter()
+        }
+    }
+
     private fun startGlyphBackgroundService() {
+        if (GlyphBackgroundService.instance != null) {
+            return
+        }
         try {
             val serviceIntent = Intent(applicationContext, GlyphBackgroundService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -274,6 +309,7 @@ class MainActivity : FlutterActivity() {
 
             startGlyphBackgroundService()
             GlyphBackgroundService.instance?.syncSensorState()
+            GlyphBackgroundService.instance?.refreshChargingAnimation()
 
             result.success(true)
         } catch (e: Exception) {
@@ -282,15 +318,148 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    private fun syncNotificationRules(data: Map<String, Any?>, result: MethodChannel.Result) {
+        try {
+            val prefs = getSharedPreferences(GlyphNotificationListenerService.PREFS_RULES, Context.MODE_PRIVATE)
+            val editor = prefs.edit()
+
+            if (data.containsKey("alerts_enabled")) {
+                editor.putBoolean("alerts_enabled", data["alerts_enabled"] as? Boolean ?: false)
+            }
+            if (data.containsKey("default_enabled")) {
+                editor.putBoolean("default_enabled", data["default_enabled"] as? Boolean ?: true)
+            }
+            if (data.containsKey("default_animation")) {
+                val defJson = data["default_animation"] as? String
+                if (defJson != null && defJson.isNotBlank()) {
+                    editor.putString("default_animation", defJson)
+                } else {
+                    editor.remove("default_animation")
+                }
+            }
+
+            @Suppress("UNCHECKED_CAST")
+            val rules = data["rules"] as? Map<String, String>
+            if (rules != null) {
+                // Clear any existing rule_* keys first
+                for (key in prefs.all.keys) {
+                    if (key.startsWith("rule_")) {
+                        editor.remove(key)
+                    }
+                }
+                for ((pkg, animJson) in rules) {
+                    editor.putString("rule_$pkg", animJson)
+                }
+            }
+
+            editor.apply()
+            Log.d(TAG, "Synced ${rules?.size ?: 0} app notification rules to native storage.")
+            result.success(true)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error syncing notification rules: ${e.message}", e)
+            result.error("SYNC_RULES_ERROR", e.message, null)
+        }
+    }
+
+    private fun getInstalledApps(result: MethodChannel.Result) {
+        Thread {
+            try {
+                val pm = packageManager
+                val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
+                    addCategory(Intent.CATEGORY_LAUNCHER)
+                }
+                val resolveInfos = pm.queryIntentActivities(mainIntent, 0)
+                val appsList = ArrayList<Map<String, Any?>>()
+
+                for (ri in resolveInfos) {
+                    try {
+                        val appName = ri.loadLabel(pm).toString()
+                        val pkg = ri.activityInfo.packageName
+                        if (pkg == packageName) continue
+
+                        val iconDrawable = ri.loadIcon(pm)
+                        val bitmap = drawableToBitmap(iconDrawable)
+                        val stream = ByteArrayOutputStream()
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 75, stream)
+                        val iconBytes = stream.toByteArray()
+
+                        appsList.add(mapOf(
+                            "appName" to appName,
+                            "packageName" to pkg,
+                            "iconBytes" to iconBytes
+                        ))
+                    } catch (_: Exception) {}
+                }
+
+                appsList.sortBy { (it["appName"] as? String)?.lowercase() ?: "" }
+
+                runOnUiThread {
+                    result.success(appsList)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error fetching installed apps: ${e.message}", e)
+                runOnUiThread {
+                    result.error("APPS_ERROR", e.message, null)
+                }
+            }
+        }.start()
+    }
+
+    private fun drawableToBitmap(drawable: Drawable): Bitmap {
+        if (drawable is BitmapDrawable && drawable.bitmap != null) {
+            return Bitmap.createScaledBitmap(drawable.bitmap, 48, 48, true)
+        }
+        val width = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth.coerceAtMost(48) else 48
+        val height = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight.coerceAtMost(48) else 48
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        drawable.setBounds(0, 0, canvas.width, canvas.height)
+        drawable.draw(canvas)
+        return Bitmap.createScaledBitmap(bitmap, 48, 48, true)
+    }
+
+    private fun isNotificationAccessGranted(): Boolean {
+        val enabledListeners = Settings.Secure.getString(
+            contentResolver,
+            "enabled_notification_listeners"
+        ) ?: return false
+        val myComponent = ComponentName(this, GlyphNotificationListenerService::class.java).flattenToString()
+        return enabledListeners.contains(myComponent) || enabledListeners.contains(packageName)
+    }
+
+    private fun openNotificationAccessSettings() {
+        val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        startActivity(intent)
+    }
+
+    private fun openNotificationSoundSettings() {
+        try {
+            val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                Intent(Settings.ACTION_ALL_APPS_NOTIFICATION_SETTINGS)
+            } else {
+                Intent(Settings.ACTION_SOUND_SETTINGS)
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+        } catch (_: Exception) {
+            try {
+                val soundIntent = Intent(Settings.ACTION_SOUND_SETTINGS).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                startActivity(soundIntent)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error opening sound settings: ${e.message}")
+            }
+        }
+    }
+
     private fun initGlyph(result: MethodChannel.Result) {
         try {
             startGlyphBackgroundService()
             GlyphNativeManager.initIfNeeded(applicationContext)
-            GlyphNativeManager.addConnectionListener {
-                runOnUiThread {
-                    notifyStatusToFlutter()
-                }
-            }
+            GlyphNativeManager.addConnectionListener(connectionListener)
             result.success(getDeviceStatusMap())
         } catch (e: Exception) {
             Log.e(TAG, "initGlyph failed: ${e.message}", e)
@@ -571,6 +740,7 @@ class MainActivity : FlutterActivity() {
 
     override fun onDestroy() {
         stopCurrentAnimation()
+        GlyphNativeManager.removeConnectionListener(connectionListener)
         try {
             sensorManager?.unregisterListener(shakeListener)
             isShakeDetectionEnabled = false

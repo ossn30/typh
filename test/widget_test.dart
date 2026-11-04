@@ -1,12 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glyph/models/glyph_animation.dart';
 import 'package:glyph/models/glyph_channel.dart';
+import 'package:glyph/models/installed_app.dart';
 import 'package:glyph/screens/compose_screen.dart';
 import 'package:glyph/screens/main_navigation_screen.dart';
+import 'package:glyph/screens/notifications_screen.dart';
+import 'package:glyph/screens/setup_screen.dart';
 import 'package:glyph/services/glyph_service.dart';
+import 'package:glyph/services/notification_rule_service.dart';
 import 'package:glyph/services/settings_service.dart';
 import 'package:glyph/widgets/glyph_strip_editor_dialog.dart';
 import 'package:glyph/widgets/interactive_glyph_visualizer.dart';
@@ -356,7 +361,8 @@ void main() {
         home: MainNavigationScreen(),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('HOME'), findsOneWidget);
     expect(find.text('ALERTS'), findsOneWidget);
@@ -364,9 +370,82 @@ void main() {
 
     // Switch to Compose
     await tester.tap(find.text('COMPOSE'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byType(ComposeScreen), findsOneWidget);
+
+    // Switch to Alerts
+    await tester.tap(find.text('ALERTS'));
+    for (int i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byType(NotificationsScreen), findsOneWidget);
+
+    // Verify Master Alerts Toggle card (option to turn alerts off or on)
+    expect(find.text('NOTIFICATION GLYPH ALERTS'), findsOneWidget);
+
+    // Verify Sound Only guide header and button
+    expect(find.textContaining('TURN ON SOUNDS ONLY IN NOTIFICATION CENTRE'), findsOneWidget);
+    expect(find.text('OPEN NOTIFICATION SOUND SETTINGS'), findsOneWidget);
+
+    // Verify Default Alert Animation card (always on, night rider by default, no switch)
+    expect(find.text('DEFAULT ALERT ANIMATION'), findsOneWidget);
+    expect(find.text('ALWAYS ON'), findsOneWidget);
+    expect(find.textContaining('NIGHT RIDER'), findsOneWidget);
+    expect(find.text('CHANGE DEFAULT'), findsOneWidget);
+    expect(find.byType(Switch), findsNothing);
+  });
+
+  test('NotificationRuleService persistence and app assignment test', () async {
+    SharedPreferences.setMockInitialValues({});
+    final service = NotificationRuleService.instance;
+    await service.init();
+
+    expect(service.defaultEnabledNotifier.value, isTrue);
+    expect(service.defaultAnimationIdNotifier.value, equals('night_rider'));
+    expect(service.alertsEnabled, isFalse); // Default OFF for notification lights
+
+    await service.setAlertsEnabled(true);
+    expect(service.alertsEnabled, isTrue);
+
+    // Assign custom animation to WhatsApp
+    await service.setAppRule('com.whatsapp', 'cylon');
+    expect(service.getAnimationForApp('com.whatsapp'), equals('cylon'));
+    expect(service.isAppConfigured('com.whatsapp'), isTrue);
+
+    // Change default
+    await service.setDefaultAnimation('sonar');
+    expect(service.defaultAnimationIdNotifier.value, equals('sonar'));
+
+    // Remove WhatsApp rule
+    await service.removeAppRule('com.whatsapp');
+    expect(service.isAppConfigured('com.whatsapp'), isFalse);
+    expect(service.getAnimationForApp('com.whatsapp'), isNull);
+  });
+
+  testWidgets('SetupScreen displays first-time setup options and completes', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await SettingsService.instance.init();
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: SetupScreen(),
+      ),
+    );
     await tester.pumpAndSettle();
 
-    expect(find.byType(ComposeScreen), findsOneWidget);
+    expect(find.text('HARDWARE SETUP'), findsOneWidget);
+    expect(find.text('CHARGING ANIMATION'), findsOneWidget);
+    expect(find.text('NOTIFICATION GLYPH LIGHTS'), findsOneWidget);
+    expect(find.text('DEFAULT: OFF (IN-APP PLAY ONLY)'), findsOneWidget);
+    expect(find.text('START USING GLYPH'), findsOneWidget);
+
+    await tester.tap(find.text('START USING GLYPH'));
+    for (int i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(SettingsService.instance.hasCompletedOnboarding, isTrue);
   });
 
   testWidgets('GlyphStripEditorDialog displays straight strip with segments and cuts', (tester) async {
@@ -413,5 +492,59 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(GlyphStripEditorDialog), findsNothing);
     expect(channels.isNotEmpty || changed != null, isTrue);
+  });
+
+  test('InstalledApp model supports both iconBytes and iconBase64', () {
+    final bytes = [137, 80, 78, 71]; // PNG magic numbers
+    final appWithBytes = InstalledApp.fromMap({
+      'appName': 'Test App 1',
+      'packageName': 'com.test.app1',
+      'iconBytes': Uint8List.fromList(bytes),
+    });
+    expect(appWithBytes.appName, equals('Test App 1'));
+    expect(appWithBytes.packageName, equals('com.test.app1'));
+    expect(appWithBytes.iconBytes, isNotNull);
+    expect(appWithBytes.iconBytes!.length, equals(4));
+
+    final base64String = base64Encode(bytes);
+    final appWithBase64 = InstalledApp.fromMap({
+      'appName': 'Test App 2',
+      'packageName': 'com.test.app2',
+      'iconBase64': base64String,
+    });
+    expect(appWithBase64.appName, equals('Test App 2'));
+    expect(appWithBase64.iconBytes, isNotNull);
+    expect(appWithBase64.iconBytes!.length, equals(4));
+  });
+
+  test('Real-time battery percentage tracking dynamically increments LEDs', () {
+    // Starting at 40% on Arc C (20 LEDs -> 8 LEDs)
+    final ch40 = GlyphService.computeChargingChannels(
+      percentage: 40,
+      selectedArcs: {'C'},
+      isClockwise: true,
+      isCombined: true,
+    );
+    expect(ch40.length, equals(8));
+
+    // Real-time battery increment to 45% -> 9 LEDs
+    final ch45 = GlyphService.computeChargingChannels(
+      percentage: 45,
+      selectedArcs: {'C'},
+      isClockwise: true,
+      isCombined: true,
+    );
+    expect(ch45.length, equals(9));
+    expect(ch45.containsAll(ch40), isTrue);
+
+    // Real-time battery increment to 50% -> 10 LEDs
+    final ch50 = GlyphService.computeChargingChannels(
+      percentage: 50,
+      selectedArcs: {'C'},
+      isClockwise: true,
+      isCombined: true,
+    );
+    expect(ch50.length, equals(10));
+    expect(ch50.containsAll(ch45), isTrue);
   });
 }

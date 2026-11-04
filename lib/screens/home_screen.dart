@@ -338,7 +338,7 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             child: ListView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(top: 12, bottom: 100),
+              padding: const EdgeInsets.only(top: 12, bottom: 24),
               children: [
                 // Category 1 Header: Charging Animation
                 const SizedBox(height: 8),

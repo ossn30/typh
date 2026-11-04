@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'screens/main_navigation_screen.dart';
+import 'screens/setup_screen.dart';
 import 'services/settings_service.dart';
 
 void main() async {
@@ -44,7 +45,9 @@ class Glyph3aApp extends StatelessWidget {
         fontFamily: 'Roboto',
         useMaterial3: false,
       ),
-      home: const MainNavigationScreen(),
+      home: SettingsService.instance.hasCompletedOnboarding
+          ? const MainNavigationScreen()
+          : const SetupScreen(),
     );
   }
 }

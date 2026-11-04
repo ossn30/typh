@@ -59,27 +59,35 @@ class GlyphBackgroundService : Service(), SensorEventListener {
     // Battery Receiver
     private val batteryReceiver = object : BroadcastReceiver() {
         private var wasCharging = false
+        private var lastReportedPercent = -1
 
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent == null) return
             val action = intent.action
 
             val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
-            val isNowCharging = (status == BatteryManager.BATTERY_STATUS_CHARGING ||
-                                status == BatteryManager.BATTERY_STATUS_FULL ||
-                                action == Intent.ACTION_POWER_CONNECTED)
+            val isNowCharging = (action != Intent.ACTION_POWER_DISCONNECTED) &&
+                                (status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                                 status == BatteryManager.BATTERY_STATUS_FULL ||
+                                 action == Intent.ACTION_POWER_CONNECTED)
 
             val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
             val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
             val percent = if (level >= 0 && scale > 0) (level * 100 / scale) else 0
 
-            Log.d(TAG, "Battery status update: isCharging=$isNowCharging, percent=$percent, action=$action")
+            Log.d(TAG, "Battery status update: isCharging=$isNowCharging, percent=$percent, action=$action, wasCharging=$wasCharging, lastReported=$lastReportedPercent")
 
-            if (isNowCharging && !wasCharging) {
-                // Just plugged in! Trigger charging animation
-                triggerChargingAnimation(percent)
-            } else if (!isNowCharging && wasCharging) {
+            if (isNowCharging) {
+                // Trigger charging animation whenever newly plugged in OR whenever battery percentage updates
+                if (!wasCharging || percent != lastReportedPercent) {
+                    wasCharging = true
+                    lastReportedPercent = percent
+                    triggerChargingAnimation(percent)
+                }
+            } else if (wasCharging) {
                 // Just unplugged! Turn off charging animation
+                wasCharging = false
+                lastReportedPercent = -1
                 mainHandler.removeCallbacks(chargingTurnOffRunnable)
                 try {
                     if (!isTorchOn) {
@@ -87,7 +95,6 @@ class GlyphBackgroundService : Service(), SensorEventListener {
                     }
                 } catch (_: Exception) {}
             }
-            wasCharging = isNowCharging
         }
     }
     private var isBatteryReceiverRegistered = false
@@ -285,6 +292,15 @@ class GlyphBackgroundService : Service(), SensorEventListener {
         } catch (_: Exception) {}
     }
 
+    fun refreshChargingAnimation() {
+        val bm = getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+        val isChargingNow = bm?.isCharging ?: false
+        val currentPercent = bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: -1
+        if (isChargingNow && currentPercent >= 0) {
+            triggerChargingAnimation(currentPercent)
+        }
+    }
+
     // --- Charging Animation ---
     fun triggerChargingAnimation(percentage: Int) {
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -294,9 +310,23 @@ class GlyphBackgroundService : Service(), SensorEventListener {
             return
         }
 
+        if (isTorchOn) {
+            Log.d(TAG, "Torch is currently active, skipping charging animation update")
+            return
+        }
+
         val gm = GlyphNativeManager.glyphManager
-        if (gm == null) {
-            Log.w(TAG, "Cannot run charging animation: GlyphManager is null")
+        if (gm == null || !GlyphNativeManager.isSessionOpened) {
+            Log.w(TAG, "GlyphManager not opened yet, will trigger charging animation once connected")
+            GlyphNativeManager.initIfNeeded(applicationContext)
+            lateinit var sessionCallback: (Boolean) -> Unit
+            sessionCallback = { opened ->
+                if (opened) {
+                    GlyphNativeManager.removeConnectionListener(sessionCallback)
+                    triggerChargingAnimation(percentage)
+                }
+            }
+            GlyphNativeManager.addConnectionListener(sessionCallback)
             return
         }
 
@@ -308,7 +338,7 @@ class GlyphBackgroundService : Service(), SensorEventListener {
         val brightness = prefs.getInt("charging_brightness", 4000).coerceIn(0, 4000)
 
         val channels = computeChargingChannels(percentage, selectedArcs, isClockwise, isCombined)
-        Log.d(TAG, "Displaying charging animation: ${channels.size} LEDs at $brightness brightness (always=$isDurationAlways)")
+        Log.d(TAG, "Displaying charging animation: $percentage% -> ${channels.size} LEDs at $brightness brightness (always=$isDurationAlways)")
 
         mainHandler.removeCallbacks(chargingTurnOffRunnable)
 
@@ -318,7 +348,11 @@ class GlyphBackgroundService : Service(), SensorEventListener {
             } else {
                 val builder = GlyphFrame.Builder(Glyph.DEVICE_24111)
                 for (ch in channels) {
-                    builder.buildChannel(ch, brightness)
+                    if (brightness == 4000) {
+                        builder.buildChannel(ch)
+                    } else {
+                        builder.buildChannel(ch, brightness)
+                    }
                 }
                 gm.toggle(builder.build())
 
@@ -337,7 +371,8 @@ class GlyphBackgroundService : Service(), SensorEventListener {
         isClockwise: Boolean,
         isCombined: Boolean
     ): Set<Int> {
-        if (selectedArcs.isEmpty()) return emptySet()
+        if (selectedArcs.isEmpty() || percent <= 0) return emptySet()
+        val clamped = percent.coerceIn(0, 100)
 
         // Arc C (20 LEDs: 0..19, upper-left)
         val arcCCw = (0..19).toList()
@@ -368,7 +403,7 @@ class GlyphBackgroundService : Service(), SensorEventListener {
             }
 
             if (combined.isNotEmpty()) {
-                val count = Math.ceil(combined.size * percent / 100.0).toInt().coerceIn(1, combined.size)
+                val count = Math.ceil(combined.size * clamped / 100.0).toInt().coerceIn(1, combined.size)
                 for (i in 0 until count) {
                     result.add(combined[i])
                 }
@@ -376,17 +411,17 @@ class GlyphBackgroundService : Service(), SensorEventListener {
         } else {
             if (selectedArcs.contains("C")) {
                 val list = if (isClockwise) arcCCw else arcCAcw
-                val count = Math.ceil(list.size * percent / 100.0).toInt().coerceIn(1, list.size)
+                val count = Math.ceil(list.size * clamped / 100.0).toInt().coerceIn(1, list.size)
                 for (i in 0 until count) result.add(list[i])
             }
             if (selectedArcs.contains("A")) {
                 val list = if (isClockwise) arcACw else arcAAcw
-                val count = Math.ceil(list.size * percent / 100.0).toInt().coerceIn(1, list.size)
+                val count = Math.ceil(list.size * clamped / 100.0).toInt().coerceIn(1, list.size)
                 for (i in 0 until count) result.add(list[i])
             }
             if (selectedArcs.contains("B")) {
                 val list = if (isClockwise) arcBCw else arcBAcw
-                val count = Math.ceil(list.size * percent / 100.0).toInt().coerceIn(1, list.size)
+                val count = Math.ceil(list.size * clamped / 100.0).toInt().coerceIn(1, list.size)
                 for (i in 0 until count) result.add(list[i])
             }
         }

@@ -18,6 +18,15 @@ class SettingsService {
   static const String _kShakeTorchEnabled = 'shake_torch_enabled';
   static const String _kShakeThreshold = 'shake_threshold';
   static const String _kTorchBrightness = 'torch_brightness';
+  static const String _kHasCompletedOnboarding = 'has_completed_onboarding';
+
+  /// Whether user has completed the first-time setup screen
+  bool get hasCompletedOnboarding =>
+      _prefs?.getBool(_kHasCompletedOnboarding) ?? false;
+
+  Future<bool> setHasCompletedOnboarding(bool completed) async {
+    return await _prefs?.setBool(_kHasCompletedOnboarding, completed) ?? false;
+  }
 
   /// Initialize SharedPreferences on app startup and sync with native background service
   Future<void> init() async {
@@ -41,7 +50,9 @@ class SettingsService {
   }
 
   void syncToNative() {
-    GlyphService.instance.syncBackgroundSettings(toMap());
+    GlyphService.instance.syncBackgroundSettings(toMap()).catchError((_) {
+      return false;
+    });
   }
 
   // --- Charging Animation Settings ---
