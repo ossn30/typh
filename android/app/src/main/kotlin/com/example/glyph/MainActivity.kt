@@ -101,6 +101,21 @@ class MainActivity : FlutterActivity() {
 
     companion object {
         private const val TAG = "TYPH_Glyph3a"
+        var activeInstance: MainActivity? = null
+            private set
+    }
+
+    fun notifyActionTriggered(trigger: String, action: String) {
+        runOnUiThread {
+            try {
+                methodChannel?.invokeMethod("onActionTriggered", mapOf(
+                    "trigger" to trigger,
+                    "action" to action
+                ))
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to send onActionTriggered: ${e.message}")
+            }
+        }
     }
 
     private val batteryReceiver = object : BroadcastReceiver() {
@@ -119,6 +134,11 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        activeInstance = this
+
+        // Ensure background services and Ketchum Glyph hardware connection are initialized immediately
+        startGlyphBackgroundService()
+        GlyphNativeManager.initIfNeeded(applicationContext)
 
         methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
         methodChannel?.setMethodCallHandler { call: MethodCall, result: MethodChannel.Result ->
@@ -352,7 +372,34 @@ class MainActivity : FlutterActivity() {
             if (settings.containsKey("torch_brightness")) {
                 editor.putInt("torch_brightness", (settings["torch_brightness"] as? Number)?.toInt() ?: 4000)
             }
-            editor.apply()
+            if (settings.containsKey("essential_key_remap_enabled")) {
+                editor.putBoolean("essential_key_remap_enabled", settings["essential_key_remap_enabled"] as? Boolean ?: true)
+            }
+            if (settings.containsKey("essential_key_code")) {
+                editor.putInt("essential_key_code", (settings["essential_key_code"] as? Number)?.toInt() ?: 0)
+            }
+            if (settings.containsKey("essential_scan_code")) {
+                editor.putInt("essential_scan_code", (settings["essential_scan_code"] as? Number)?.toInt() ?: 250)
+            }
+            if (settings.containsKey("essential_action_single_press")) {
+                editor.putString("essential_action_single_press", settings["essential_action_single_press"] as? String ?: "torch")
+            }
+            if (settings.containsKey("essential_action_double_press")) {
+                editor.putString("essential_action_double_press", settings["essential_action_double_press"] as? String ?: "calculator")
+            }
+            if (settings.containsKey("essential_action_triple_press")) {
+                editor.putString("essential_action_triple_press", settings["essential_action_triple_press"] as? String ?: "ringer_mode")
+            }
+            if (settings.containsKey("essential_action_long_press")) {
+                editor.putString("essential_action_long_press", settings["essential_action_long_press"] as? String ?: "power_menu")
+            }
+            if (settings.containsKey("essential_timing_multi_press_gap_ms")) {
+                editor.putInt("essential_timing_multi_press_gap_ms", (settings["essential_timing_multi_press_gap_ms"] as? Number)?.toInt() ?: 350)
+            }
+            if (settings.containsKey("essential_timing_long_press_hold_ms")) {
+                editor.putInt("essential_timing_long_press_hold_ms", (settings["essential_timing_long_press_hold_ms"] as? Number)?.toInt() ?: 500)
+            }
+            editor.commit()
 
             startGlyphBackgroundService()
             GlyphBackgroundService.instance?.syncSensorState()
@@ -399,7 +446,7 @@ class MainActivity : FlutterActivity() {
                 }
             }
 
-            editor.apply()
+            editor.commit()
             Log.d(TAG, "Synced ${rules?.size ?: 0} app notification rules to native storage.")
             result.success(true)
         } catch (e: Exception) {
@@ -829,30 +876,67 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (isListeningForHardwareKey && event.action == KeyEvent.ACTION_DOWN) {
-            val keyCode = event.keyCode
-            val scanCode = event.scanCode
-            if (keyCode != KeyEvent.KEYCODE_BACK) {
-                val keyName = KeyEvent.keyCodeToString(keyCode)
-                Log.d(TAG, "Hardware key captured: keyCode=$keyCode, scanCode=$scanCode, keyName=$keyName")
+        val keyCode = event.keyCode
+        val scanCode = event.scanCode
+
+        // Strict Hardware Filter: Volume Up (24), Volume Down (25), Power (26) must NEVER be remapped
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP ||
+            keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
+            keyCode == KeyEvent.KEYCODE_POWER) {
+            if (isListeningForHardwareKey && event.action == KeyEvent.ACTION_DOWN) {
                 runOnUiThread {
                     methodChannel?.invokeMethod("onHardwareKeyCaptured", mapOf(
                         "keyCode" to keyCode,
                         "scanCode" to scanCode,
-                        "keyName" to keyName
+                        "keyName" to KeyEvent.keyCodeToString(keyCode),
+                        "isRejected" to true,
+                        "error" to "Volume and Power keys cannot be used as Essential Key"
+                    ))
+                }
+            }
+            return super.dispatchKeyEvent(event)
+        }
+
+        // Essential Key on Nothing Phone (3a): scanCode 250, keyCode 0, KEYCODE_UNKNOWN
+        val isEssential = (scanCode == 250) || (keyCode == 0) || (keyCode == 0 && scanCode == 250)
+
+        if (isListeningForHardwareKey && event.action == KeyEvent.ACTION_DOWN) {
+            if (keyCode != KeyEvent.KEYCODE_BACK) {
+                val keyName = if (isEssential) "KEYCODE_UNKNOWN" else KeyEvent.keyCodeToString(keyCode)
+                Log.d(TAG, "Hardware key captured: keyCode=$keyCode, scanCode=$scanCode, keyName=$keyName, isEssential=$isEssential")
+                runOnUiThread {
+                    methodChannel?.invokeMethod("onHardwareKeyCaptured", mapOf(
+                        "keyCode" to keyCode,
+                        "scanCode" to scanCode,
+                        "keyName" to keyName,
+                        "isEssentialKey" to isEssential,
+                        "isValid" to isEssential
                     ))
                 }
                 return true
             }
         } else if (!isListeningForHardwareKey) {
             val prefs = getSharedPreferences("glyph_native_settings", Context.MODE_PRIVATE)
-            val remapEnabled = prefs.getBoolean("essential_key_remap_enabled", false)
-            val targetKeyCode = prefs.getInt("essential_key_code", -1)
-            if (remapEnabled && targetKeyCode > 0 && event.keyCode == targetKeyCode) {
+            val remapEnabled = prefs.getBoolean("essential_key_remap_enabled", true)
+            val targetScanCode = prefs.getInt("essential_scan_code", 250)
+            val targetKeyCode = prefs.getInt("essential_key_code", 0)
+
+            val matchesKey = isEssential ||
+                (targetScanCode == 250 && scanCode == 250) ||
+                (targetScanCode > 0 && scanCode == targetScanCode) ||
+                (targetKeyCode > 0 && keyCode == targetKeyCode)
+
+            if (remapEnabled && matchesKey) {
+                // If GlyphAccessibilityService is actively running, it handles hardware key gestures system-wide.
+                // Consuming the key here prevents dual/competing timers from running!
+                if (GlyphAccessibilityService.isRunning) {
+                    return true
+                }
                 runOnUiThread {
                     methodChannel?.invokeMethod("onEssentialKeyEvent", mapOf(
                         "action" to if (event.action == KeyEvent.ACTION_DOWN) "down" else "up",
-                        "keyCode" to event.keyCode,
+                        "keyCode" to keyCode,
+                        "scanCode" to scanCode,
                         "repeatCount" to event.repeatCount,
                         "eventTime" to event.eventTime
                     ))
@@ -864,12 +948,16 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun isAccessibilityServiceEnabled(): Boolean {
+        if (GlyphAccessibilityService.isRunning) return true
         val expectedComponentName = ComponentName(this, GlyphAccessibilityService::class.java).flattenToString()
+        val shortName = "${packageName}/.GlyphAccessibilityService"
         val enabledServicesSetting = Settings.Secure.getString(
             contentResolver,
             Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
         ) ?: return false
-        return enabledServicesSetting.contains(expectedComponentName) || GlyphAccessibilityService.isRunning
+        return enabledServicesSetting.contains(expectedComponentName) ||
+               enabledServicesSetting.contains(shortName) ||
+               enabledServicesSetting.contains("GlyphAccessibilityService")
     }
 
     private fun openAccessibilitySettings() {
@@ -899,294 +987,22 @@ class MainActivity : FlutterActivity() {
         return if (lp.screenBrightness >= 0) lp.screenBrightness else 0.5f
     }
 
-    private fun speakText(text: String) {
-        try {
-            if (tts == null) {
-                tts = TextToSpeech(applicationContext) { status ->
-                    if (status == TextToSpeech.SUCCESS) {
-                        tts?.language = Locale.getDefault()
-                        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "read_aloud_id")
-                    }
-                }
-            } else {
-                tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "read_aloud_id")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "TTS speak error: ${e.message}")
-        }
-    }
 
     private fun executeKeyAction(action: String, params: Map<String, Any?>, result: MethodChannel.Result) {
         try {
-            when (action) {
-                "torch" -> {
-                    // Let background service / native manager handle torch
-                    result.success(mapOf("status" to "success", "action" to "torch"))
-                }
-                "rotation_lock" -> {
-                    try {
-                        val cr = contentResolver
-                        val current = Settings.System.getInt(cr, Settings.System.ACCELEROMETER_ROTATION, 1)
-                        val newState = if (current == 1) 0 else 1
-                        val canWrite = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) Settings.System.canWrite(this) else true
-                        if (canWrite) {
-                            Settings.System.putInt(cr, Settings.System.ACCELEROMETER_ROTATION, newState)
-                            result.success(mapOf("status" to "success", "state" to (newState == 1), "message" to (if (newState == 1) "Auto-rotate ON" else "Rotation LOCKED")))
-                        } else {
-                            val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS).apply {
-                                data = android.net.Uri.parse("package:$packageName")
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            }
-                            startActivity(intent)
-                            result.success(mapOf("status" to "permission_needed", "message" to "Grant Write Settings permission"))
-                        }
-                    } catch (_: Exception) {
-                        val intent = Intent(Settings.ACTION_DISPLAY_SETTINGS).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-                        startActivity(intent)
-                        result.success(mapOf("status" to "opened_settings"))
-                    }
-                }
-                "auto_brightness" -> {
-                    try {
-                        val cr = contentResolver
-                        val current = Settings.System.getInt(cr, Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL)
-                        val newMode = if (current == Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC) Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL else Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC
-                        val canWrite = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) Settings.System.canWrite(this) else true
-                        if (canWrite) {
-                            Settings.System.putInt(cr, Settings.System.SCREEN_BRIGHTNESS_MODE, newMode)
-                            result.success(mapOf("status" to "success", "auto" to (newMode == Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC), "message" to (if (newMode == Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC) "Auto Brightness ON" else "Auto Brightness OFF")))
-                        } else {
-                            val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS).apply {
-                                data = android.net.Uri.parse("package:$packageName")
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            }
-                            startActivity(intent)
-                            result.success(mapOf("status" to "permission_needed"))
-                        }
-                    } catch (e: Exception) {
-                        result.error("BRIGHTNESS_ERROR", e.message, null)
-                    }
-                }
-                "ringer_mode" -> {
-                    val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-                    val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                    val canChangeDnd = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) nm.isNotificationPolicyAccessGranted else true
-                    val currentMode = am.ringerMode
-                    val (newMode, label) = when (currentMode) {
-                        AudioManager.RINGER_MODE_NORMAL -> Pair(AudioManager.RINGER_MODE_VIBRATE, "VIBRATE")
-                        AudioManager.RINGER_MODE_VIBRATE -> if (canChangeDnd) Pair(AudioManager.RINGER_MODE_SILENT, "SILENT") else Pair(AudioManager.RINGER_MODE_NORMAL, "RING")
-                        else -> Pair(AudioManager.RINGER_MODE_NORMAL, "RING")
-                    }
-                    try {
-                        am.ringerMode = newMode
-                        result.success(mapOf("status" to "success", "mode" to label, "message" to "Ringer: $label"))
-                    } catch (_: Exception) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && !nm.isNotificationPolicyAccessGranted) {
-                            val intent = Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-                            startActivity(intent)
-                        }
-                        result.success(mapOf("status" to "permission_needed"))
-                    }
-                }
-                "dnd" -> {
-                    val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        if (nm.isNotificationPolicyAccessGranted) {
-                            val current = nm.currentInterruptionFilter
-                            val newFilter = if (current == NotificationManager.INTERRUPTION_FILTER_ALL) NotificationManager.INTERRUPTION_FILTER_PRIORITY else NotificationManager.INTERRUPTION_FILTER_ALL
-                            nm.setInterruptionFilter(newFilter)
-                            val isDnd = newFilter != NotificationManager.INTERRUPTION_FILTER_ALL
-                            result.success(mapOf("status" to "success", "dnd" to isDnd, "message" to if (isDnd) "Do Not Disturb ON" else "Do Not Disturb OFF"))
-                        } else {
-                            val intent = Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-                            startActivity(intent)
-                            result.success(mapOf("status" to "permission_needed", "message" to "Grant DND permission"))
-                        }
-                    } else {
-                        result.success(mapOf("status" to "not_supported"))
-                    }
-                }
-                "voice_assistant" -> {
-                    try {
-                        val intent = Intent(Intent.ACTION_VOICE_COMMAND).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        startActivity(intent)
-                        result.success(mapOf("status" to "success", "message" to "Voice Assistant launched"))
-                    } catch (_: Exception) {
-                        try {
-                            val assistIntent = Intent(Intent.ACTION_ASSIST).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            }
-                            startActivity(assistIntent)
-                            result.success(mapOf("status" to "success"))
-                        } catch (e: Exception) {
-                            result.error("ASSISTANT_ERROR", e.message, null)
-                        }
-                    }
-                }
-                "lock_screen" -> {
-                    val acc = GlyphAccessibilityService.instance
-                    if (acc != null) {
-                        val locked = acc.performLockScreen()
-                        result.success(mapOf("status" to if (locked) "success" else "failed", "message" to "Screen locked"))
-                    } else {
-                        openAccessibilitySettings()
-                        result.success(mapOf("status" to "accessibility_required", "message" to "Enable Accessibility Service to lock screen"))
-                    }
-                }
-                "wake_screen" -> {
-                    val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
-                    @Suppress("DEPRECATION")
-                    val wl = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP, "glyph:wake")
-                    wl.acquire(2000)
-                    result.success(mapOf("status" to "success", "message" to "Screen waking up"))
-                }
-                "brightness_slider" -> {
-                    result.success(mapOf("status" to "success", "action" to "brightness_slider", "current" to getSystemBrightness()))
-                }
-                "night_light" -> {
-                    try {
-                        val intent = Intent(Settings.ACTION_NIGHT_DISPLAY_SETTINGS).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        startActivity(intent)
-                    } catch (_: Exception) {
-                        val intent = Intent(Settings.ACTION_DISPLAY_SETTINGS).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        startActivity(intent)
-                    }
-                    result.success(mapOf("status" to "success", "message" to "Night Light panel opened"))
-                }
-                "extra_dim" -> {
-                    try {
-                        val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        startActivity(intent)
-                        result.success(mapOf("status" to "success", "message" to "Extra Dim / Accessibility opened"))
-                    } catch (e: Exception) {
-                        result.error("EXTRA_DIM_ERROR", e.message, null)
-                    }
-                }
-                "internet_panel" -> {
-                    try {
-                        val intent = Intent("android.settings.panel.action.INTERNET_CONNECTIVITY").apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        startActivity(intent)
-                        result.success(mapOf("status" to "success", "message" to "Internet panel opened"))
-                    } catch (_: Exception) {
-                        val intent = Intent(Settings.ACTION_WIRELESS_SETTINGS).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        startActivity(intent)
-                        result.success(mapOf("status" to "success", "message" to "Wireless settings opened"))
-                    }
-                }
-                "bluetooth_panel" -> {
-                    try {
-                        val intent = Intent("android.settings.panel.action.BLUETOOTH").apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        startActivity(intent)
-                        result.success(mapOf("status" to "success", "message" to "Bluetooth panel opened"))
-                    } catch (_: Exception) {
-                        val intent = Intent(Settings.ACTION_BLUETOOTH_SETTINGS).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        startActivity(intent)
-                        result.success(mapOf("status" to "success", "message" to "Bluetooth settings opened"))
-                    }
-                }
-                "volume_panel" -> {
-                    val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-                    am.adjustVolume(AudioManager.ADJUST_SAME, AudioManager.FLAG_SHOW_UI)
-                    try {
-                        val intent = Intent("android.settings.panel.action.VOLUME").apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        startActivity(intent)
-                    } catch (_: Exception) {}
-                    result.success(mapOf("status" to "success", "message" to "Volume panel displayed"))
-                }
-                "power_menu" -> {
-                    val acc = GlyphAccessibilityService.instance
-                    if (acc != null) {
-                        acc.performPowerMenu()
-                        result.success(mapOf("status" to "success", "message" to "Power menu opened"))
-                    } else {
-                        openAccessibilitySettings()
-                        result.success(mapOf("status" to "accessibility_required", "message" to "Enable Accessibility Service for Power Dialog"))
-                    }
-                }
-                "set_timer" -> {
-                    try {
-                        val intent = Intent(AlarmClock.ACTION_SET_TIMER).apply {
-                            putExtra(AlarmClock.EXTRA_SKIP_UI, false)
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        startActivity(intent)
-                        result.success(mapOf("status" to "success", "message" to "Timer opened"))
-                    } catch (_: Exception) {
-                        try {
-                            val clockIntent = Intent(AlarmClock.ACTION_SHOW_ALARMS).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            }
-                            startActivity(clockIntent)
-                            result.success(mapOf("status" to "success", "message" to "Clock opened"))
-                        } catch (e: Exception) {
-                            result.error("TIMER_ERROR", e.message, null)
-                        }
-                    }
-                }
-                "read_aloud" -> {
-                    val textToRead = params["text"] as? String ?: run {
-                        val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        cm.primaryClip?.getItemAt(0)?.text?.toString() ?: "No text selected or in clipboard"
-                    }
-                    speakText(textToRead)
-                    result.success(mapOf("status" to "success", "text" to textToRead, "message" to "Reading aloud: $textToRead"))
-                }
-                "copy_text" -> {
-                    val textToCopy = params["text"] as? String ?: "Copied via Essential Key"
-                    val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    cm.setPrimaryClip(ClipData.newPlainText("GlyphCopy", textToCopy))
-                    result.success(mapOf("status" to "success", "message" to "Text copied to clipboard"))
-                }
-                "paste_text" -> {
-                    val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    val text = cm.primaryClip?.getItemAt(0)?.text?.toString() ?: ""
-                    result.success(mapOf("status" to "success", "text" to text, "message" to if (text.isNotEmpty()) "Pasted: $text" else "Clipboard empty"))
-                }
-                "calculator" -> {
-                    val pm = packageManager
-                    val calcIntent = pm.getLaunchIntentForPackage("com.google.android.calculator")
-                        ?: pm.getLaunchIntentForPackage("com.nothing.calculator")
-                        ?: pm.getLaunchIntentForPackage("com.android.calculator2")
-                        ?: Intent(Intent.ACTION_MAIN).apply {
-                            addCategory(Intent.CATEGORY_APP_CALCULATOR)
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                    try {
-                        startActivity(calcIntent)
-                        result.success(mapOf("status" to "success", "message" to "Calculator launched"))
-                    } catch (e: Exception) {
-                        result.error("CALC_ERROR", "Could not open calculator: ${e.message}", null)
-                    }
-                }
-                else -> {
-                    result.success(mapOf("status" to "ignored", "action" to action))
-                }
-            }
+            val response = KeyActionExecutor.execute(this, action, params)
+            result.success(response)
         } catch (e: Exception) {
             Log.e(TAG, "Error executing key action $action: ${e.message}", e)
             result.error("ACTION_ERROR", e.message, null)
         }
     }
 
+
     override fun onDestroy() {
+        if (activeInstance == this) {
+            activeInstance = null
+        }
         stopCurrentAnimation()
         GlyphNativeManager.removeConnectionListener(connectionListener)
         try {

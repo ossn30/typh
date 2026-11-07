@@ -81,6 +81,11 @@ class GlyphService {
   Stream<Map<String, dynamic>> get onEssentialKeyEvent =>
       _essentialKeyEventStreamController.stream;
 
+  final StreamController<Map<String, dynamic>> _actionTriggeredStreamController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  Stream<Map<String, dynamic>> get onActionTriggered =>
+      _actionTriggeredStreamController.stream;
+
   Future<void> _handleNativeCall(MethodCall call) async {
     if (call.method == 'onStatusChanged') {
       final data = call.arguments as Map<dynamic, dynamic>?;
@@ -101,6 +106,11 @@ class GlyphService {
       final data = call.arguments as Map<dynamic, dynamic>?;
       if (data != null) {
         _essentialKeyEventStreamController.add(Map<String, dynamic>.from(data));
+      }
+    } else if (call.method == 'onActionTriggered') {
+      final data = call.arguments as Map<dynamic, dynamic>?;
+      if (data != null) {
+        _actionTriggeredStreamController.add(Map<String, dynamic>.from(data));
       }
     }
   }

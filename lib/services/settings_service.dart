@@ -48,6 +48,9 @@ class SettingsService {
   /// Initialize SharedPreferences on app startup and sync with native background service
   Future<void> init() async {
     _prefs ??= await SharedPreferences.getInstance();
+    if (!_prefs!.containsKey(_kEssentialKeyRemapEnabled)) {
+      await _prefs!.setBool(_kEssentialKeyRemapEnabled, true);
+    }
     syncToNative();
   }
 
@@ -65,6 +68,8 @@ class SettingsService {
       _kTorchBrightness: torchBrightness,
       _kEssentialKeyRemapEnabled: isEssentialKeyRemapEnabled,
       _kEssentialKeyCode: essentialKeyCode,
+      _kEssentialScanCode: essentialScanCode,
+      _kEssentialKeyName: essentialKeyName,
       _kSinglePressAction: singlePressAction,
       _kDoublePressAction: doublePressAction,
       _kTriplePressAction: triplePressAction,
@@ -175,37 +180,44 @@ class SettingsService {
   // --- Essential Key Remapper Settings ---
 
   bool get isEssentialKeyRemapEnabled =>
-      _prefs?.getBool(_kEssentialKeyRemapEnabled) ?? false;
+      _prefs?.getBool(_kEssentialKeyRemapEnabled) ?? true;
 
   Future<bool> setEssentialKeyRemapEnabled(bool value) async {
-    return await _prefs?.setBool(_kEssentialKeyRemapEnabled, value) ?? false;
+    final res =
+        await _prefs?.setBool(_kEssentialKeyRemapEnabled, value) ?? false;
+    syncToNative();
+    return res;
   }
 
-  int? get essentialKeyCode => _prefs?.getInt(_kEssentialKeyCode);
+  int get essentialKeyCode => _prefs?.getInt(_kEssentialKeyCode) ?? 0;
 
   Future<bool> setEssentialKeyCode(int? code) async {
-    if (code == null) {
-      return await _prefs?.remove(_kEssentialKeyCode) ?? false;
-    }
-    return await _prefs?.setInt(_kEssentialKeyCode, code) ?? false;
+    final res = code == null
+        ? await _prefs?.remove(_kEssentialKeyCode) ?? false
+        : await _prefs?.setInt(_kEssentialKeyCode, code) ?? false;
+    syncToNative();
+    return res;
   }
 
-  int? get essentialScanCode => _prefs?.getInt(_kEssentialScanCode);
+  int get essentialScanCode => _prefs?.getInt(_kEssentialScanCode) ?? 250;
 
   Future<bool> setEssentialScanCode(int? code) async {
-    if (code == null) {
-      return await _prefs?.remove(_kEssentialScanCode) ?? false;
-    }
-    return await _prefs?.setInt(_kEssentialScanCode, code) ?? false;
+    final res = code == null
+        ? await _prefs?.remove(_kEssentialScanCode) ?? false
+        : await _prefs?.setInt(_kEssentialScanCode, code) ?? false;
+    syncToNative();
+    return res;
   }
 
-  String? get essentialKeyName => _prefs?.getString(_kEssentialKeyName);
+  String get essentialKeyName =>
+      _prefs?.getString(_kEssentialKeyName) ?? 'KEYCODE_UNKNOWN';
 
   Future<bool> setEssentialKeyName(String? name) async {
-    if (name == null) {
-      return await _prefs?.remove(_kEssentialKeyName) ?? false;
-    }
-    return await _prefs?.setString(_kEssentialKeyName, name) ?? false;
+    final res = name == null
+        ? await _prefs?.remove(_kEssentialKeyName) ?? false
+        : await _prefs?.setString(_kEssentialKeyName, name) ?? false;
+    syncToNative();
+    return res;
   }
 
   bool get essentialPackagesDisabled =>

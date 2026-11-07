@@ -11,7 +11,6 @@ import '../widgets/animation_player_cards.dart';
 import '../widgets/charging_cards.dart';
 import '../widgets/shake_torch_cards.dart';
 import '../widgets/timer_duration_dialog.dart';
-import 'key_remapper_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -421,10 +420,7 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 ),
 
-                // Category 3: Essential Key Remapper
-                _buildEssentialKeyCard(),
-
-                // Category 4: Glyph Animations
+                // Category 3: Glyph Animations
                 const SizedBox(height: 0),
                 AnimationPlayerSection(
                   onAnimationStarted: () {
@@ -651,87 +647,5 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _buildEssentialKeyCard() {
-    final remapEnabled = _settings.isEssentialKeyRemapEnabled;
-    final keyCode = _settings.essentialKeyCode;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            HapticFeedback.lightImpact();
-            Navigator.of(context)
-                .push(
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        const KeyRemapperScreen(showBackButton: true),
-                  ),
-                )
-                .then((_) => setState(() {}));
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2196F3).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.smart_button_rounded,
-                    color: Color(0xFF2196F3),
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'ESSENTIAL KEY REMAPPER',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          fontFamily: 'ndot',
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        keyCode != null
-                            ? 'Key bound (Code: $keyCode) • Tap to configure'
-                            : (remapEnabled
-                                  ? 'Enabled • Tap to bind key'
-                                  : 'Remap Nothing Phone (3a) button'),
-                        style: const TextStyle(
-                          color: Color(0xFF8E8E93),
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  color: Color(0xFF8E8E93),
-                  size: 14,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }

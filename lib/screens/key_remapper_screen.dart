@@ -20,7 +20,8 @@ class KeyRemapperScreen extends StatefulWidget {
   State<KeyRemapperScreen> createState() => _KeyRemapperScreenState();
 }
 
-class _KeyRemapperScreenState extends State<KeyRemapperScreen> {
+class _KeyRemapperScreenState extends State<KeyRemapperScreen>
+    with WidgetsBindingObserver {
   final SettingsService _settings = SettingsService.instance;
   final GlyphService _glyph = GlyphService.instance;
   final KeyActionService _actionService = KeyActionService.instance;
@@ -52,38 +53,84 @@ class _KeyRemapperScreenState extends State<KeyRemapperScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadState();
     _checkAdbStatus();
     _checkAccessibilityStatus();
 
     _keySubscription = _glyph.onHardwareKeyCaptured.listen((data) {
       if (!_isListeningForKey && !_remapEnabled) return;
+      final isRejected = data['isRejected'] as bool? ?? false;
       final code = data['keyCode'] as int?;
       final scan = data['scanCode'] as int?;
-      final name = data['keyName'] as String?;
 
-      if (code != null && mounted) {
+      if (!mounted) return;
+
+      if (isRejected || code == 24 || code == 25 || code == 26) {
+        HapticFeedback.vibrate();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFFD32F2F),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            content: const Text(
+              'Volume and Power buttons cannot be used as Essential Key.',
+              style: TextStyle(
+                color: Colors.white,
+                fontFamily: 'ndot',
+                fontSize: 12,
+              ),
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
+
+      final isEssential = (scan == 250) ||
+          (code == 0 && scan == 250) ||
+          (data['isEssentialKey'] as bool? ?? false);
+
+      if (isEssential) {
         HapticFeedback.heavyImpact();
         setState(() {
-          _keyCode = code;
-          _scanCode = scan;
-          _keyName = name;
+          _keyCode = 0;
+          _scanCode = 250;
+          _keyName = 'KEYCODE_UNKNOWN';
           _isListeningForKey = false;
         });
-        _settings.setEssentialKeyCode(code);
-        if (scan != null) _settings.setEssentialScanCode(scan);
-        if (name != null) _settings.setEssentialKeyName(name);
+        _settings.setEssentialKeyCode(0);
+        _settings.setEssentialScanCode(250);
+        _settings.setEssentialKeyName('KEYCODE_UNKNOWN');
 
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFF1B5E20),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: const BorderSide(color: Color(0xFF4CAF50), width: 1),
+            ),
+            content: const Text(
+              '✓ Essential Key Verified! (ScanCode: 250, KeyCode: 0)',
+              style: TextStyle(
+                color: Colors.white,
+                fontFamily: 'ndot',
+                fontSize: 12,
+              ),
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: cardColor,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: const BorderSide(color: selectedColor, width: 1),
-            ),
             content: Text(
-              'Essential Key Detected! (Code: $code)',
+              'Key detected (ScanCode: $scan). Essential Key is ScanCode 250.',
               style: const TextStyle(
                 color: Colors.white,
                 fontFamily: 'ndot',
@@ -129,6 +176,14 @@ class _KeyRemapperScreenState extends State<KeyRemapperScreen> {
     }
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkAccessibilityStatus();
+      _checkAdbStatus();
+    }
+  }
+
   Future<void> _checkAccessibilityStatus() async {
     final enabled = await _glyph.isAccessibilityServiceEnabled();
     if (mounted) {
@@ -142,6 +197,80 @@ class _KeyRemapperScreenState extends State<KeyRemapperScreen> {
       _remapEnabled = value;
     });
     await _settings.setEssentialKeyRemapEnabled(value);
+
+    if (value && !_isAccessibilityEnabled) {
+      if (mounted) {
+        _showAccessibilityRequiredDialog();
+      }
+    }
+  }
+
+  void _showAccessibilityRequiredDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.accessibility_new_rounded, color: selectedColor, size: 22),
+            SizedBox(width: 10),
+            Text(
+              'ACCESSIBILITY NEEDED',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                fontFamily: 'ndot',
+                letterSpacing: 0.6,
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'To detect the Essential Key when the app is closed, in the background, or when the screen is locked, Android requires the "Glyph Key Remapper Service" accessibility permission.\n\nOpen Accessibility Settings now?',
+          style: TextStyle(
+            color: Color(0xFFCCCCCC),
+            fontSize: 12.5,
+            height: 1.45,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text(
+              'LATER',
+              style: TextStyle(
+                color: Colors.white54,
+                fontFamily: 'ndot',
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: selectedColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              await _glyph.openAccessibilitySettings();
+            },
+            child: const Text(
+              'OPEN SETTINGS',
+              style: TextStyle(
+                color: Colors.white,
+                fontFamily: 'ndot',
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _startKeyListening() async {
@@ -232,6 +361,7 @@ class _KeyRemapperScreenState extends State<KeyRemapperScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _keySubscription?.cancel();
     _glyph.stopHardwareKeyListening();
     super.dispose();
@@ -248,15 +378,38 @@ class _KeyRemapperScreenState extends State<KeyRemapperScreen> {
         if (_isListeningForKey && event is KeyDownEvent) {
           final logicalKey = event.logicalKey;
           final physicalKey = event.physicalKey;
-          HapticFeedback.heavyImpact();
-          setState(() {
-            _keyCode = logicalKey.keyId;
-            _scanCode = physicalKey.usbHidUsage;
-            _keyName = logicalKey.keyLabel;
-            _isListeningForKey = false;
-          });
-          _settings.setEssentialKeyCode(logicalKey.keyId);
-          _glyph.stopHardwareKeyListening();
+
+          if (logicalKey == LogicalKeyboardKey.audioVolumeUp ||
+              logicalKey == LogicalKeyboardKey.audioVolumeDown ||
+              logicalKey == LogicalKeyboardKey.power) {
+            HapticFeedback.vibrate();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Volume and Power buttons cannot be used as Essential Key.',
+                  style: TextStyle(fontFamily: 'ndot', color: Colors.white),
+                ),
+                backgroundColor: Color(0xFFD32F2F),
+              ),
+            );
+            return;
+          }
+
+          final isEssential =
+              physicalKey.usbHidUsage == 250 || logicalKey.keyId == 0;
+          if (isEssential) {
+            HapticFeedback.heavyImpact();
+            setState(() {
+              _keyCode = 0;
+              _scanCode = 250;
+              _keyName = 'KEYCODE_UNKNOWN';
+              _isListeningForKey = false;
+            });
+            _settings.setEssentialKeyCode(0);
+            _settings.setEssentialScanCode(250);
+            _settings.setEssentialKeyName('KEYCODE_UNKNOWN');
+            _glyph.stopHardwareKeyListening();
+          }
         }
       },
       child: Scaffold(
@@ -331,6 +484,72 @@ class _KeyRemapperScreenState extends State<KeyRemapperScreen> {
                 ),
               ],
             ),
+            if (_remapEnabled && !_isAccessibilityEnabled) ...[
+              const SizedBox(height: 12),
+              InkWell(
+                onTap: () async {
+                  HapticFeedback.mediumImpact();
+                  await _glyph.openAccessibilitySettings();
+                },
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2C1515),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: const Color(0xFFE53935).withValues(alpha: 0.6),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        color: Color(0xFFE53935),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'ACCESSIBILITY SERVICE DISABLED',
+                              style: TextStyle(
+                                color: Color(0xFFFF8A80),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                fontFamily: 'ndot',
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            SizedBox(height: 3),
+                            Text(
+                              'Required for remapped keys to work when app is closed. Tap to enable.',
+                              style: TextStyle(
+                                color: Color(0xFFCCCCCC),
+                                fontSize: 11,
+                                height: 1.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        color: Color(0xFFFF8A80),
+                        size: 14,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
 
             // Card 1: Key Registration Status
@@ -514,9 +733,7 @@ class _KeyRemapperScreenState extends State<KeyRemapperScreen> {
                           Text(
                             _isListeningForKey
                                 ? 'AWAITING KEY... (TAP TO CANCEL)'
-                                : (_keyCode == null
-                                    ? 'RECORD ESSENTIAL KEY'
-                                    : 'RE-RECORD KEY'),
+                                : 'VERIFY HARDWARE KEY',
                             style: TextStyle(
                               color: _isListeningForKey
                                   ? selectedColor

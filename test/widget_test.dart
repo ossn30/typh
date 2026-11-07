@@ -563,12 +563,14 @@ void main() {
     final settings = SettingsService.instance;
     await settings.init();
 
-    expect(settings.isEssentialKeyRemapEnabled, isFalse);
-    expect(settings.essentialKeyCode, isNull);
-    expect(settings.essentialScanCode, isNull);
-    expect(settings.essentialKeyName, isNull);
+    expect(settings.isEssentialKeyRemapEnabled, isTrue);
+    expect(settings.essentialKeyCode, equals(0));
+    expect(settings.essentialScanCode, equals(250));
+    expect(settings.essentialKeyName, equals('KEYCODE_UNKNOWN'));
     expect(settings.essentialPackagesDisabled, isFalse);
 
+    await settings.setEssentialKeyRemapEnabled(false);
+    expect(settings.isEssentialKeyRemapEnabled, isFalse);
     await settings.setEssentialKeyRemapEnabled(true);
     await settings.setEssentialKeyCode(289);
     await settings.setEssentialScanCode(301);
@@ -614,12 +616,19 @@ void main() {
     expect(find.text('REMAP ESSENTIAL KEY (3A)'), findsOneWidget);
     expect(find.text('NOTHING PHONE (3A) HARDWARE'), findsOneWidget);
 
-    // Initially ADB wizard is not shown
-    expect(find.text('DISABLE SYSTEM APPS (ADB)'), findsNothing);
+    // Enabled by default so features work out-of-the-box
+    expect(find.text('DISABLE SYSTEM APPS (ADB)'), findsOneWidget);
 
-    // Toggle Essential Key Remapper ON (3rd switch)
+    // Toggle Essential Key Remapper OFF (3rd switch)
     final switches = find.byType(CupertinoSwitch);
     expect(switches, findsNWidgets(3));
+    await tester.tap(switches.at(2));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('DISABLE SYSTEM APPS (ADB)'), findsNothing);
+
+    // Toggle Essential Key Remapper back ON
     await tester.tap(switches.at(2));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
@@ -628,7 +637,7 @@ void main() {
     expect(find.text('DISABLE SYSTEM APPS (ADB)'), findsOneWidget);
     expect(find.textContaining('com.nothing.ntessentialrecorder'), findsOneWidget);
     expect(find.textContaining('com.nothing.ntessentialspace'), findsOneWidget);
-    expect(find.text('PRESS ESSENTIAL KEY'), findsOneWidget);
+    expect(find.text('VERIFY ESSENTIAL KEY (3A)'), findsOneWidget);
 
     for (int i = 0; i < 5; i++) {
       await tester.pump(const Duration(milliseconds: 100));

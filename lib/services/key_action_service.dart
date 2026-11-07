@@ -18,19 +18,39 @@ class KeyActionService {
 
   OverlayEntry? _currentOverlayEntry;
   StreamSubscription<Map<String, dynamic>>? _keyEventSub;
+  StreamSubscription<Map<String, dynamic>>? _actionTriggeredSub;
 
   int _tapCount = 0;
   Timer? _multiTapTimer;
   Timer? _longPressTimer;
   bool _isKeyDown = false;
+  bool _longPressFired = false;
 
   void init() {
     _keyEventSub?.cancel();
     _keyEventSub = _glyph.onEssentialKeyEvent.listen(_handleNativeKeyEvent);
+
+    // Listen to native Accessibility Service trigger events so HUD overlay shows when app is open
+    _actionTriggeredSub?.cancel();
+    _actionTriggeredSub = _glyph.onActionTriggered.listen((data) {
+      final actionId = data['action'] as String? ?? 'none';
+      final trigger = data['trigger'] as String? ?? 'single_press';
+      final action = KeyActions.findById(actionId);
+      if (action.type != KeyActionType.none) {
+        if (action.type == KeyActionType.torch) {
+          _glyph.isTorchOnNotifier.value = !_glyph.isTorchOnNotifier.value;
+        }
+        showOverlay(
+          action: action,
+          triggerLabel: trigger.toUpperCase().replaceAll('_', ' '),
+        );
+      }
+    });
   }
 
   void dispose() {
     _keyEventSub?.cancel();
+    _actionTriggeredSub?.cancel();
     _multiTapTimer?.cancel();
     _longPressTimer?.cancel();
     _removeOverlay();
@@ -40,17 +60,23 @@ class KeyActionService {
     if (!_settings.isEssentialKeyRemapEnabled) return;
 
     final actionType = data['action'] as String? ?? 'down';
+    final repeatCount = data['repeatCount'] as int? ?? 0;
     final gapMs = _settings.multiPressGapMs;
     final holdMs = _settings.longPressHoldMs;
 
     if (actionType == 'down') {
+      // Critical: Ignore key repeat events generated while holding down the button!
+      if (repeatCount > 0) return;
+
       _isKeyDown = true;
+      _longPressFired = false;
       _multiTapTimer?.cancel();
 
       // Start long-press detection
       _longPressTimer?.cancel();
       _longPressTimer = Timer(Duration(milliseconds: holdMs), () {
         if (_isKeyDown) {
+          _longPressFired = true;
           _tapCount = 0;
           _triggerKeyAction(KeyTriggerType.longPress);
         }
@@ -59,20 +85,22 @@ class KeyActionService {
       _isKeyDown = false;
       _longPressTimer?.cancel();
 
-      // Only count tap if it wasn't a completed long press
-      _tapCount++;
-      _multiTapTimer?.cancel();
-      _multiTapTimer = Timer(Duration(milliseconds: gapMs), () {
-        final count = _tapCount;
-        _tapCount = 0;
-        if (count == 1) {
-          _triggerKeyAction(KeyTriggerType.singlePress);
-        } else if (count == 2) {
-          _triggerKeyAction(KeyTriggerType.doublePress);
-        } else if (count >= 3) {
-          _triggerKeyAction(KeyTriggerType.triplePress);
-        }
-      });
+      // Only count tap if long press wasn't already triggered
+      if (!_longPressFired) {
+        _tapCount++;
+        _multiTapTimer?.cancel();
+        _multiTapTimer = Timer(Duration(milliseconds: gapMs), () {
+          final count = _tapCount;
+          _tapCount = 0;
+          if (count == 1) {
+            _triggerKeyAction(KeyTriggerType.singlePress);
+          } else if (count == 2) {
+            _triggerKeyAction(KeyTriggerType.doublePress);
+          } else if (count >= 3) {
+            _triggerKeyAction(KeyTriggerType.triplePress);
+          }
+        });
+      }
     }
   }
 

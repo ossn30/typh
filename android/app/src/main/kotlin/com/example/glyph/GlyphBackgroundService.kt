@@ -38,7 +38,11 @@ class GlyphBackgroundService : Service(), SensorEventListener {
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
-    private var isTorchOn = false
+    var isTorchOn: Boolean
+        get() = KeyActionExecutor.isTorchActive
+        set(value) {
+            KeyActionExecutor.isTorchActive = value
+        }
     private var lastShakeTimestamp = 0L
     private val SHAKE_DEBOUNCE_MS = 650L
 
@@ -247,37 +251,8 @@ class GlyphBackgroundService : Service(), SensorEventListener {
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 
-    private fun toggleTorch() {
-        val gm = GlyphNativeManager.glyphManager
-        if (gm == null) {
-            Log.w(TAG, "Cannot toggle torch: GlyphManager is null")
-            return
-        }
-
-        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val brightness = prefs.getInt("torch_brightness", 4000).coerceIn(0, 4000)
-
-        if (isTorchOn) {
-            isTorchOn = false
-            try {
-                gm.turnOff()
-                vibratePhone(40)
-            } catch (e: Exception) {
-                Log.e(TAG, "Error turning off torch: ${e.message}")
-            }
-        } else {
-            isTorchOn = true
-            try {
-                val builder = GlyphFrame.Builder(Glyph.DEVICE_24111)
-                for (ch in 0..35) {
-                    builder.buildChannel(ch, brightness)
-                }
-                gm.toggle(builder.build())
-                vibratePhone(70)
-            } catch (e: Exception) {
-                Log.e(TAG, "Error turning on torch: ${e.message}")
-            }
-        }
+    fun toggleTorch(): Boolean {
+        return KeyActionExecutor.toggleTorch(this)
     }
 
     private fun vibratePhone(durationMs: Long) {

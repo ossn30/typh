@@ -2,6 +2,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:glyph/colors.dart';
+import '../services/glyph_service.dart';
+import '../services/settings_service.dart';
 import 'compose_screen.dart';
 import 'home_screen.dart';
 import 'key_remapper_screen.dart';
@@ -14,8 +16,33 @@ class MainNavigationScreen extends StatefulWidget {
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
-class _MainNavigationScreenState extends State<MainNavigationScreen> {
+class _MainNavigationScreenState extends State<MainNavigationScreen>
+    with WidgetsBindingObserver {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Guarantee settings and hardware background connections are synced on app startup
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      SettingsService.instance.syncToNative();
+      GlyphService.instance.init();
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      SettingsService.instance.syncToNative();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   void _onTabTapped(int index) {
     if (_currentIndex == index) return;

@@ -1,6 +1,7 @@
 package com.example.glyph
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
 import android.content.Intent
 import android.os.Handler
@@ -23,6 +24,7 @@ class GlyphAccessibilityService : AccessibilityService() {
     private val handler = Handler(Looper.getMainLooper())
     private var tapCount = 0
     private var isKeyDown = false
+    private var isLongPressTriggered = false
     private var keyDownTime = 0L
 
     private val multiTapRunnable = Runnable {
@@ -37,6 +39,7 @@ class GlyphAccessibilityService : AccessibilityService() {
 
     private val longPressRunnable = Runnable {
         if (isKeyDown) {
+            isLongPressTriggered = true
             tapCount = 0
             handler.removeCallbacks(multiTapRunnable)
             handleTrigger("long_press")
@@ -47,6 +50,20 @@ class GlyphAccessibilityService : AccessibilityService() {
         super.onServiceConnected()
         instance = this
         Log.d(TAG, "GlyphAccessibilityService connected")
+
+        try {
+            GlyphNativeManager.initIfNeeded(applicationContext)
+            if (GlyphBackgroundService.instance == null) {
+                val serviceIntent = Intent(applicationContext, GlyphBackgroundService::class.java)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    applicationContext.startForegroundService(serviceIntent)
+                } else {
+                    applicationContext.startService(serviceIntent)
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to start background service from accessibility: ${e.message}")
+        }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
@@ -60,28 +77,52 @@ class GlyphAccessibilityService : AccessibilityService() {
     }
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
-        val prefs = getSharedPreferences("glyph_native_settings", Context.MODE_PRIVATE)
-        val remapEnabled = prefs.getBoolean("essential_key_remap_enabled", false)
-        val targetKeyCode = prefs.getInt("essential_key_code", -1)
+        // Strict guard: NEVER intercept volume up/down, or power keys
+        if (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP ||
+            event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
+            event.keyCode == KeyEvent.KEYCODE_POWER) {
+            return super.onKeyEvent(event)
+        }
 
-        if (!remapEnabled || targetKeyCode <= 0 || event.keyCode != targetKeyCode) {
+        val prefs = getSharedPreferences("glyph_native_settings", Context.MODE_PRIVATE)
+        val remapEnabled = prefs.getBoolean("essential_key_remap_enabled", true)
+        if (!remapEnabled) {
+            return super.onKeyEvent(event)
+        }
+
+        val targetScanCode = prefs.getInt("essential_scan_code", 250)
+        val targetKeyCode = prefs.getInt("essential_key_code", 0)
+
+        // Essential Key on Nothing Phone (3a): scanCode 250, keyCode 0, KEYCODE_UNKNOWN
+        val isEssential = (event.scanCode == 250) ||
+            (event.keyCode == 0) ||
+            (targetScanCode == 250 && event.scanCode == 250) ||
+            (targetScanCode > 0 && event.scanCode == targetScanCode) ||
+            (targetKeyCode > 0 && event.keyCode == targetKeyCode)
+
+        if (!isEssential) {
             return super.onKeyEvent(event)
         }
 
         val gapMs = prefs.getInt("essential_timing_multi_press_gap_ms", 350).toLong()
         val holdMs = prefs.getInt("essential_timing_long_press_hold_ms", 500).toLong()
 
-        if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+        if (event.action == KeyEvent.ACTION_DOWN) {
+            if (event.repeatCount > 0) {
+                // Key repeat while holding down: ignore and consume
+                return true
+            }
             isKeyDown = true
+            isLongPressTriggered = false
             keyDownTime = System.currentTimeMillis()
             handler.removeCallbacks(multiTapRunnable)
+            handler.removeCallbacks(longPressRunnable)
             handler.postDelayed(longPressRunnable, holdMs)
             return true
         } else if (event.action == KeyEvent.ACTION_UP) {
             isKeyDown = false
             handler.removeCallbacks(longPressRunnable)
-            val duration = System.currentTimeMillis() - keyDownTime
-            if (duration < holdMs) {
+            if (!isLongPressTriggered) {
                 tapCount++
                 handler.removeCallbacks(multiTapRunnable)
                 handler.postDelayed(multiTapRunnable, gapMs)
@@ -104,43 +145,25 @@ class GlyphAccessibilityService : AccessibilityService() {
 
         Log.d(TAG, "Triggered: $trigger -> Action: $action")
         executeAction(action)
+
+        // If MainActivity is in foreground, notify it so Nothing OS HUD overlay displays in app
+        MainActivity.activeInstance?.notifyActionTriggered(trigger, action)
     }
 
     fun executeAction(action: String) {
+        if (action == "none" || action.isBlank()) return
+
         when (action) {
-            "lock_screen" -> performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
-            "power_menu" -> performGlobalAction(GLOBAL_ACTION_POWER_DIALOG)
-            "volume_panel" -> {
-                val intent = Intent("android.settings.panel.action.VOLUME").apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                try {
-                    startActivity(intent)
-                } catch (_: Exception) {}
+            "lock_screen" -> {
+                KeyActionExecutor.vibrate(this, 60L)
+                performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
             }
-            "internet_panel" -> {
-                val intent = Intent("android.settings.panel.action.INTERNET_CONNECTIVITY").apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                try {
-                    startActivity(intent)
-                } catch (_: Exception) {}
-            }
-            "bluetooth_panel" -> {
-                val intent = Intent("android.settings.panel.action.BLUETOOTH").apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                try {
-                    startActivity(intent)
-                } catch (_: Exception) {}
+            "power_menu" -> {
+                KeyActionExecutor.vibrate(this, 60L)
+                performGlobalAction(GLOBAL_ACTION_POWER_DIALOG)
             }
             else -> {
-                // Forward to MainActivity or GlyphBackgroundService
-                val intent = Intent("com.example.glyph.ACTION_EXECUTE_KEY").apply {
-                    putExtra("action", action)
-                    setPackage(packageName)
-                }
-                sendBroadcast(intent)
+                KeyActionExecutor.execute(this, action)
             }
         }
     }
