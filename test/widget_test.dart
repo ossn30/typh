@@ -368,24 +368,33 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('HOME'), findsOneWidget);
-    expect(find.text('KEYMAP'), findsOneWidget);
-    expect(find.text('ALERTS'), findsOneWidget);
-    expect(find.text('COMPOSE'), findsOneWidget);
+    // In Nothing OS style navbar, only the selected tab displays its label
+    expect(find.text('KEYMAP'), findsNothing);
+    expect(find.text('ISLAND'), findsNothing);
+    expect(find.text('ALERTS'), findsNothing);
+    expect(find.text('COMPOSE'), findsNothing);
 
-    // Switch to Keymap
-    await tester.tap(find.text('KEYMAP'));
+    // Switch to Keymap via its icon
+    await tester.tap(find.byIcon(Icons.smart_button_outlined));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('KEYMAP'), findsOneWidget);
     expect(find.byType(KeyRemapperScreen), findsOneWidget);
 
-    // Switch to Compose
-    await tester.tap(find.text('COMPOSE'));
+    // Switch to Island via its icon
+    await tester.tap(find.byIcon(Icons.bubble_chart_outlined));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('ISLAND'), findsOneWidget);
+
+    // Switch to Compose via its icon
+    await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(ComposeScreen), findsOneWidget);
 
-    // Switch to Alerts
-    await tester.tap(find.text('ALERTS'));
+    // Switch to Alerts via its icon
+    await tester.tap(find.byIcon(Icons.notifications_none_rounded));
     for (int i = 0; i < 6; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }

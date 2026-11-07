@@ -43,6 +43,13 @@ class SettingsService {
   static const String _kOverlayPositionPercent = 'overlay_position_percent';
   static const String _kOverlayDurationMs = 'overlay_duration_ms';
 
+  // Dynamic Island Settings
+  static const String _kIslandEnabled = 'island_enabled';
+  static const String _kIslandShowOnCharging = 'island_show_on_charging';
+  static const String _kIslandTopMargin = 'island_top_margin';
+  static const String _kIslandCutoutDiameter = 'island_cutout_diameter';
+  static const String _kIslandPillWidth = 'island_pill_width';
+
   /// Whether user has completed the first-time setup screen
   bool get hasCompletedOnboarding =>
       _prefs?.getBool(_kHasCompletedOnboarding) ?? false;
@@ -86,6 +93,11 @@ class SettingsService {
       _kOverlayPositionSide: overlayPositionSide,
       _kOverlayPositionPercent: overlayPositionPercent,
       _kOverlayDurationMs: overlayDurationMs,
+      _kIslandEnabled: isIslandEnabled,
+      _kIslandShowOnCharging: isIslandShowOnCharging,
+      _kIslandTopMargin: islandTopMargin,
+      _kIslandCutoutDiameter: islandCutoutDiameter,
+      _kIslandPillWidth: islandPillWidth,
     };
   }
 
@@ -325,6 +337,49 @@ class SettingsService {
 
   Future<bool> setOverlayDurationMs(int ms) async {
     final res = await _prefs?.setInt(_kOverlayDurationMs, ms) ?? false;
+    syncToNative();
+    return res;
+  }
+
+  // --- Dynamic Island Settings ---
+
+  bool get isIslandEnabled => _prefs?.getBool(_kIslandEnabled) ?? true;
+
+  Future<bool> setIslandEnabled(bool value) async {
+    final res = await _prefs?.setBool(_kIslandEnabled, value) ?? false;
+    syncToNative();
+    return res;
+  }
+
+  bool get isIslandShowOnCharging =>
+      _prefs?.getBool(_kIslandShowOnCharging) ?? true;
+
+  Future<bool> setIslandShowOnCharging(bool value) async {
+    final res = await _prefs?.setBool(_kIslandShowOnCharging, value) ?? false;
+    syncToNative();
+    return res;
+  }
+
+  int get islandTopMargin => _prefs?.getInt(_kIslandTopMargin) ?? 10;
+
+  Future<bool> setIslandTopMargin(int value) async {
+    final res = await _prefs?.setInt(_kIslandTopMargin, value) ?? false;
+    syncToNative();
+    return res;
+  }
+
+  int get islandCutoutDiameter => _prefs?.getInt(_kIslandCutoutDiameter) ?? 32;
+
+  Future<bool> setIslandCutoutDiameter(int value) async {
+    final res = await _prefs?.setInt(_kIslandCutoutDiameter, value) ?? false;
+    syncToNative();
+    return res;
+  }
+
+  int get islandPillWidth => _prefs?.getInt(_kIslandPillWidth) ?? 190;
+
+  Future<bool> setIslandPillWidth(int value) async {
+    final res = await _prefs?.setInt(_kIslandPillWidth, value) ?? false;
     syncToNative();
     return res;
   }

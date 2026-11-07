@@ -6,6 +6,7 @@ import '../services/glyph_service.dart';
 import '../services/settings_service.dart';
 import 'compose_screen.dart';
 import 'home_screen.dart';
+import 'island_screen.dart';
 import 'key_remapper_screen.dart';
 import 'notifications_screen.dart';
 
@@ -61,6 +62,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
         children: [
           const HomeScreen(),
           const KeyRemapperScreen(),
+          const IslandScreen(),
           const NotificationsScreen(),
           ComposeScreen(onAnimationSaved: () => _onTabTapped(0)),
         ],
@@ -97,37 +99,35 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
         padding: const EdgeInsets.all(4),
         child: Row(
           children: [
-            Expanded(
-              child: _buildNavItem(
-                index: 0,
-                icon: Icons.home_rounded,
-                activeIcon: Icons.home_rounded,
-                label: 'HOME',
-              ),
+            _buildNavItem(
+              index: 0,
+              icon: Icons.home_outlined,
+              activeIcon: Icons.home_rounded,
+              label: 'HOME',
             ),
-            Expanded(
-              child: _buildNavItem(
-                index: 1,
-                icon: Icons.smart_button_outlined,
-                activeIcon: Icons.smart_button_rounded,
-                label: 'KEYMAP',
-              ),
+            _buildNavItem(
+              index: 1,
+              icon: Icons.smart_button_outlined,
+              activeIcon: Icons.smart_button_rounded,
+              label: 'KEYMAP',
             ),
-            Expanded(
-              child: _buildNavItem(
-                index: 2,
-                icon: Icons.notifications_none_rounded,
-                activeIcon: Icons.notifications_rounded,
-                label: 'ALERTS',
-              ),
+            _buildNavItem(
+              index: 2,
+              icon: Icons.bubble_chart_outlined,
+              activeIcon: Icons.bubble_chart_rounded,
+              label: 'ISLAND',
             ),
-            Expanded(
-              child: _buildNavItem(
-                index: 3,
-                icon: Icons.auto_awesome_outlined,
-                activeIcon: Icons.auto_awesome_rounded,
-                label: 'COMPOSE',
-              ),
+            _buildNavItem(
+              index: 3,
+              icon: Icons.notifications_none_rounded,
+              activeIcon: Icons.notifications_rounded,
+              label: 'ALERTS',
+            ),
+            _buildNavItem(
+              index: 4,
+              icon: Icons.auto_awesome_outlined,
+              activeIcon: Icons.auto_awesome_rounded,
+              label: 'COMPOSE',
             ),
           ],
         ),
@@ -143,51 +143,56 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   }) {
     final isSelected = _currentIndex == index;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => _onTabTapped(index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-        decoration: BoxDecoration(
-          color: isSelected ? appBackgroundColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                isSelected ? activeIcon : icon,
-                color: isSelected ? selectedColor : const Color(0xFF757780),
-                size: 17,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : const Color(0xFF757780),
-                  fontSize: 10,
-                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                  fontFamily: 'ndot',
-                  letterSpacing: 0.6,
+    return Expanded(
+      flex: isSelected ? 3 : 2,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _onTabTapped(index),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          decoration: BoxDecoration(
+            color: isSelected ? appBackgroundColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isSelected ? activeIcon : icon,
+                  color: isSelected ? selectedColor : const Color(0xFF757780),
+                  size: 18,
                 ),
-              ),
-              if (isSelected) ...[
-                const SizedBox(width: 3),
-                Container(
-                  width: 3.5,
-                  height: 3.5,
-                  decoration: const BoxDecoration(
-                    color: selectedColor,
-                    shape: BoxShape.circle,
+                if (isSelected) ...[
+                  const SizedBox(width: 5),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        fontFamily: 'ndot',
+                        letterSpacing: 0.6,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 3),
+                  Container(
+                    width: 3.5,
+                    height: 3.5,
+                    decoration: const BoxDecoration(
+                      color: selectedColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

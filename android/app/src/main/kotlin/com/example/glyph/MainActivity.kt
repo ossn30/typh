@@ -11,6 +11,8 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.hardware.Sensor
@@ -129,6 +131,12 @@ class MainActivity : FlutterActivity() {
             batteryLevel = if (level >= 0 && scale > 0) (level * 100 / scale) else 0
 
             notifyBatteryToFlutter()
+
+            if (isCharging) {
+                DynamicIslandOverlay.showCharging(this@MainActivity, batteryLevel, true, stayWhileCharging = true)
+            } else if (DynamicIslandOverlay.isShowing) {
+                DynamicIslandOverlay.dismiss()
+            }
         }
     }
 
@@ -255,6 +263,41 @@ class MainActivity : FlutterActivity() {
                     val message = call.argument<String>("message")
                     SystemHudOverlay.show(this, trigger, action, message)
                     result.success(true)
+                }
+                "showDynamicIsland" -> {
+                    val percent = call.argument<Int>("batteryPercent") ?: 85
+                    val isCharging = call.argument<Boolean>("isCharging") ?: true
+                    val durationMs = (call.argument<Int>("durationMs") ?: 4000).toLong()
+                    val stayWhileCharging = call.argument<Boolean>("stayWhileCharging") ?: false
+                    DynamicIslandOverlay.showCharging(this, percent, isCharging, stayWhileCharging, durationMs)
+                    result.success(true)
+                }
+                "dismissDynamicIsland" -> {
+                    DynamicIslandOverlay.dismiss()
+                    result.success(true)
+                }
+                "isOverlayPermissionGranted" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        result.success(android.provider.Settings.canDrawOverlays(this))
+                    } else {
+                        result.success(true)
+                    }
+                }
+                "openOverlaySettings" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        val intent = Intent(
+                            android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            android.net.Uri.parse("package:$packageName")
+                        ).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        startActivity(intent)
+                    }
+                    result.success(true)
+                }
+                "getCameraCutoutInfo" -> {
+                    val info = DynamicIslandOverlay.getCutoutInfo(this)
+                    result.success(info)
                 }
                 else -> {
                     result.notImplemented()
@@ -418,6 +461,30 @@ class MainActivity : FlutterActivity() {
             if (settings.containsKey("overlay_duration_ms")) {
                 editor.putInt("overlay_duration_ms", (settings["overlay_duration_ms"] as? Number)?.toInt() ?: 2000)
             }
+            if (settings.containsKey("island_enabled")) {
+                editor.putBoolean("island_enabled", settings["island_enabled"] as? Boolean ?: true)
+            }
+            if (settings.containsKey("island_show_on_charging")) {
+                editor.putBoolean("island_show_on_charging", settings["island_show_on_charging"] as? Boolean ?: true)
+            }
+            if (settings.containsKey("island_top_margin")) {
+                editor.putInt("island_top_margin", (settings["island_top_margin"] as? Number)?.toInt() ?: 10)
+            }
+            if (settings.containsKey("island_cutout_diameter")) {
+                editor.putInt("island_cutout_diameter", (settings["island_cutout_diameter"] as? Number)?.toInt() ?: 32)
+            }
+            if (settings.containsKey("island_pill_width")) {
+                editor.putInt("island_pill_width", (settings["island_pill_width"] as? Number)?.toInt() ?: 195)
+            }
+            if (settings.containsKey("icon_theme_mode")) {
+                editor.putString("icon_theme_mode", settings["icon_theme_mode"] as? String ?: "system")
+            }
+            if (settings.containsKey("icon_shape")) {
+                editor.putString("icon_shape", settings["icon_shape"] as? String ?: "circle")
+            }
+            if (settings.containsKey("icon_monochrome_tint")) {
+                editor.putString("icon_monochrome_tint", settings["icon_monochrome_tint"] as? String ?: "white")
+            }
             editor.commit()
 
             startGlyphBackgroundService()
@@ -491,9 +558,9 @@ class MainActivity : FlutterActivity() {
                         if (pkg == packageName) continue
 
                         val iconDrawable = ri.loadIcon(pm)
-                        val bitmap = drawableToBitmap(iconDrawable)
+                        val iconBmp = drawableToBitmap(iconDrawable)
                         val stream = ByteArrayOutputStream()
-                        bitmap.compress(Bitmap.CompressFormat.PNG, 75, stream)
+                        iconBmp.compress(Bitmap.CompressFormat.PNG, 85, stream)
                         val iconBytes = stream.toByteArray()
 
                         appsList.add(mapOf(
@@ -501,7 +568,9 @@ class MainActivity : FlutterActivity() {
                             "packageName" to pkg,
                             "iconBytes" to iconBytes
                         ))
-                    } catch (_: Exception) {}
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Error loading app icon: ${e.message}")
+                    }
                 }
 
                 appsList.sortBy { (it["appName"] as? String)?.lowercase() ?: "" }
@@ -519,16 +588,27 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun drawableToBitmap(drawable: Drawable): Bitmap {
-        if (drawable is BitmapDrawable && drawable.bitmap != null) {
-            return Bitmap.createScaledBitmap(drawable.bitmap, 48, 48, true)
+        var target = drawable
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && drawable is AdaptiveIconDrawable) {
+            // First priority: Android 13+ native monochrome icon layer provided by the app (e.g. WhatsApp, Google apps)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && drawable.monochrome != null) {
+                target = drawable.monochrome!!
+            } else if (drawable.foreground != null) {
+                // Second priority: Adaptive foreground emblem layer (strips the solid colored background)
+                target = drawable.foreground!!
+            }
         }
-        val width = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth.coerceAtMost(48) else 48
-        val height = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight.coerceAtMost(48) else 48
+
+        if (target is BitmapDrawable && target.bitmap != null) {
+            return Bitmap.createScaledBitmap(target.bitmap, 64, 64, true)
+        }
+        val width = 64
+        val height = 64
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
-        drawable.setBounds(0, 0, canvas.width, canvas.height)
-        drawable.draw(canvas)
-        return Bitmap.createScaledBitmap(bitmap, 48, 48, true)
+        target.setBounds(0, 0, canvas.width, canvas.height)
+        target.draw(canvas)
+        return bitmap
     }
 
     private fun isNotificationAccessGranted(): Boolean {

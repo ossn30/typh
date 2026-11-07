@@ -635,4 +635,69 @@ class GlyphService {
       return false;
     }
   }
+
+  /// Trigger preview of Dynamic Island around the camera cutout
+  Future<bool> showDynamicIsland({
+    required String mode,
+    int? batteryPercent,
+    bool? isCharging,
+    bool? stayWhileCharging,
+    int? durationMs,
+  }) async {
+    try {
+      final res = await _channel.invokeMethod<bool>('showDynamicIsland', {
+        'mode': mode,
+        'batteryPercent': batteryPercent ?? 85,
+        'isCharging': isCharging ?? true,
+        'stayWhileCharging': stayWhileCharging ?? false,
+        'durationMs': durationMs ?? 4000,
+      });
+      return res ?? true;
+    } catch (e) {
+      debugPrint('GlyphService showDynamicIsland error: $e');
+      return false;
+    }
+  }
+
+  /// Dismiss the active Dynamic Island overlay
+  Future<bool> dismissDynamicIsland() async {
+    try {
+      final res = await _channel.invokeMethod<bool>('dismissDynamicIsland');
+      return res ?? true;
+    } catch (e) {
+      debugPrint('GlyphService dismissDynamicIsland error: $e');
+      return false;
+    }
+  }
+
+  /// Check whether SYSTEM_ALERT_WINDOW overlay permission is granted
+  Future<bool> isOverlayPermissionGranted() async {
+    try {
+      final res = await _channel.invokeMethod<bool>('isOverlayPermissionGranted');
+      return res ?? false;
+    } catch (e) {
+      debugPrint('GlyphService isOverlayPermissionGranted error: $e');
+      return false;
+    }
+  }
+
+  /// Open Android settings screen for Draw Over Other Apps
+  Future<void> openOverlaySettings() async {
+    try {
+      await _channel.invokeMethod('openOverlaySettings');
+    } catch (e) {
+      debugPrint('GlyphService openOverlaySettings error: $e');
+    }
+  }
+
+  /// Query detected hardware camera cutout bounds from Android
+  Future<Map<String, dynamic>?> getCameraCutoutInfo() async {
+    try {
+      final res = await _channel.invokeMapMethod<String, dynamic>('getCameraCutoutInfo');
+      return res;
+    } catch (e) {
+      debugPrint('GlyphService getCameraCutoutInfo error: $e');
+      return null;
+    }
+  }
 }

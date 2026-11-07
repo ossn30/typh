@@ -87,12 +87,24 @@ class GlyphBackgroundService : Service(), SensorEventListener {
                     wasCharging = true
                     lastReportedPercent = percent
                     triggerChargingAnimation(percent)
+                    try {
+                        DynamicIslandOverlay.showCharging(this@GlyphBackgroundService, percent, true, stayWhileCharging = true)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error triggering Dynamic Island charging overlay: ${e.message}", e)
+                    }
+                } else if (DynamicIslandOverlay.isShowing) {
+                    DynamicIslandOverlay.updateBattery(percent, true)
                 }
             } else if (wasCharging) {
-                // Just unplugged! Turn off charging animation
+                // Just unplugged! Turn off charging animation & dismiss Dynamic Island
                 wasCharging = false
                 lastReportedPercent = -1
                 mainHandler.removeCallbacks(chargingTurnOffRunnable)
+                try {
+                    DynamicIslandOverlay.dismiss()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error dismissing Dynamic Island: ${e.message}", e)
+                }
                 try {
                     if (!isTorchOn) {
                         GlyphNativeManager.glyphManager?.turnOff()
