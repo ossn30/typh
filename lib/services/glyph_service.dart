@@ -616,4 +616,23 @@ class GlyphService {
       return false;
     }
   }
+
+  /// Trigger preview of system-wide HUD overlay on screen
+  Future<bool> showSystemHudOverlay({
+    required String trigger,
+    required String action,
+    String? message,
+  }) async {
+    try {
+      final res = await _channel.invokeMethod<bool>('showSystemHudOverlay', {
+        'trigger': trigger,
+        'action': action,
+        'message': message,
+      });
+      return res ?? true;
+    } catch (e) {
+      debugPrint('GlyphService showSystemHudOverlay error: $e');
+      return false;
+    }
+  }
 }

@@ -249,6 +249,13 @@ class MainActivity : FlutterActivity() {
                     openAccessibilitySettings()
                     result.success(true)
                 }
+                "showSystemHudOverlay" -> {
+                    val trigger = call.argument<String>("trigger") ?: "single_press"
+                    val action = call.argument<String>("action") ?: "torch"
+                    val message = call.argument<String>("message")
+                    SystemHudOverlay.show(this, trigger, action, message)
+                    result.success(true)
+                }
                 else -> {
                     result.notImplemented()
                 }
@@ -398,6 +405,18 @@ class MainActivity : FlutterActivity() {
             }
             if (settings.containsKey("essential_timing_long_press_hold_ms")) {
                 editor.putInt("essential_timing_long_press_hold_ms", (settings["essential_timing_long_press_hold_ms"] as? Number)?.toInt() ?: 500)
+            }
+            if (settings.containsKey("overlay_enabled")) {
+                editor.putBoolean("overlay_enabled", settings["overlay_enabled"] as? Boolean ?: true)
+            }
+            if (settings.containsKey("overlay_position_side")) {
+                editor.putString("overlay_position_side", settings["overlay_position_side"] as? String ?: "left")
+            }
+            if (settings.containsKey("overlay_position_percent")) {
+                editor.putInt("overlay_position_percent", (settings["overlay_position_percent"] as? Number)?.toInt() ?: 45)
+            }
+            if (settings.containsKey("overlay_duration_ms")) {
+                editor.putInt("overlay_duration_ms", (settings["overlay_duration_ms"] as? Number)?.toInt() ?: 2000)
             }
             editor.commit()
 

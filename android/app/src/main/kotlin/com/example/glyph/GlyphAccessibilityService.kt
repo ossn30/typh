@@ -146,7 +146,10 @@ class GlyphAccessibilityService : AccessibilityService() {
         Log.d(TAG, "Triggered: $trigger -> Action: $action")
         executeAction(action)
 
-        // If MainActivity is in foreground, notify it so Nothing OS HUD overlay displays in app
+        // Show system-wide Nothing OS HUD overlay positioned near the physical key
+        SystemHudOverlay.show(this, trigger, action)
+
+        // If MainActivity is in foreground, notify it as well
         MainActivity.activeInstance?.notifyActionTriggered(trigger, action)
     }
 

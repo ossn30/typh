@@ -11,10 +11,7 @@ import '../services/settings_service.dart';
 class KeyRemapperScreen extends StatefulWidget {
   final bool showBackButton;
 
-  const KeyRemapperScreen({
-    super.key,
-    this.showBackButton = false,
-  });
+  const KeyRemapperScreen({super.key, this.showBackButton = false});
 
   @override
   State<KeyRemapperScreen> createState() => _KeyRemapperScreenState();
@@ -40,6 +37,13 @@ class _KeyRemapperScreenState extends State<KeyRemapperScreen>
   // Timings
   int _multiPressGapMs = 350;
   int _longPressHoldMs = 500;
+
+  // System HUD Overlay
+  bool _overlayEnabled = true;
+  String _overlayPositionSide = 'left';
+  int _overlayPositionPercent = 45;
+  int _overlayDurationMs = 2000;
+  String _previewSelectedTrigger = 'single_press';
 
   // Status
   bool _isCheckingAdb = false;
@@ -89,7 +93,8 @@ class _KeyRemapperScreenState extends State<KeyRemapperScreen>
         return;
       }
 
-      final isEssential = (scan == 250) ||
+      final isEssential =
+          (scan == 250) ||
           (code == 0 && scan == 250) ||
           (data['isEssentialKey'] as bool? ?? false);
 
@@ -159,6 +164,11 @@ class _KeyRemapperScreenState extends State<KeyRemapperScreen>
 
       _multiPressGapMs = _settings.multiPressGapMs;
       _longPressHoldMs = _settings.longPressHoldMs;
+
+      _overlayEnabled = _settings.isOverlayEnabled;
+      _overlayPositionSide = _settings.overlayPositionSide;
+      _overlayPositionPercent = _settings.overlayPositionPercent;
+      _overlayDurationMs = _settings.overlayDurationMs;
     });
   }
 
@@ -213,7 +223,11 @@ class _KeyRemapperScreenState extends State<KeyRemapperScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
-            Icon(Icons.accessibility_new_rounded, color: selectedColor, size: 22),
+            Icon(
+              Icons.accessibility_new_rounded,
+              color: selectedColor,
+              size: 22,
+            ),
             SizedBox(width: 10),
             Text(
               'ACCESSIBILITY NEEDED',
@@ -776,7 +790,9 @@ class _KeyRemapperScreenState extends State<KeyRemapperScreen>
                 Text(
                   _remapEnabled ? 'ACTIVE' : 'DISABLED',
                   style: TextStyle(
-                    color: _remapEnabled ? const Color(0xFF4CAF50) : const Color(0xFF8E8E93),
+                    color: _remapEnabled
+                        ? const Color(0xFF4CAF50)
+                        : const Color(0xFF8E8E93),
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     fontFamily: 'ndot',
@@ -817,7 +833,12 @@ class _KeyRemapperScreenState extends State<KeyRemapperScreen>
 
             const SizedBox(height: 14),
 
-            // Card 4: ADB Verification
+            // Card 4: System HUD Overlay & Position Customization
+            _buildOverlayPositionCard(),
+
+            const SizedBox(height: 14),
+
+            // Card 5: ADB Verification
             _buildAdbStatusCard(),
           ],
         ),
@@ -894,10 +915,7 @@ class _KeyRemapperScreenState extends State<KeyRemapperScreen>
           const SizedBox(height: 4),
           const Text(
             'Maximum window between consecutive taps for double & triple press.',
-            style: TextStyle(
-              color: Color(0xFF7A7D87),
-              fontSize: 11,
-            ),
+            style: TextStyle(color: Color(0xFF7A7D87), fontSize: 11),
           ),
           CupertinoSlider(
             value: _multiPressGapMs.toDouble(),
@@ -942,10 +960,7 @@ class _KeyRemapperScreenState extends State<KeyRemapperScreen>
           const SizedBox(height: 4),
           const Text(
             'How much continuous hold is needed to trigger the long press action.',
-            style: TextStyle(
-              color: Color(0xFF7A7D87),
-              fontSize: 11,
-            ),
+            style: TextStyle(color: Color(0xFF7A7D87), fontSize: 11),
           ),
           CupertinoSlider(
             value: _longPressHoldMs.toDouble(),
@@ -1025,7 +1040,10 @@ class _KeyRemapperScreenState extends State<KeyRemapperScreen>
                 borderRadius: BorderRadius.circular(8),
                 onTap: () => _testAction(action.type, trigger.label),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: appBackgroundColor,
                     borderRadius: BorderRadius.circular(8),
@@ -1033,7 +1051,11 @@ class _KeyRemapperScreenState extends State<KeyRemapperScreen>
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.play_arrow_rounded, color: Colors.white, size: 14),
+                      Icon(
+                        Icons.play_arrow_rounded,
+                        color: Colors.white,
+                        size: 14,
+                      ),
                       SizedBox(width: 4),
                       Text(
                         'TEST',
@@ -1194,7 +1216,10 @@ class _KeyRemapperScreenState extends State<KeyRemapperScreen>
             child: OutlinedButton(
               onPressed: () async {
                 await _glyph.openAccessibilitySettings();
-                Future.delayed(const Duration(seconds: 1), _checkAccessibilityStatus);
+                Future.delayed(
+                  const Duration(seconds: 1),
+                  _checkAccessibilityStatus,
+                );
               },
               style: OutlinedButton.styleFrom(
                 side: BorderSide(
@@ -1218,6 +1243,675 @@ class _KeyRemapperScreenState extends State<KeyRemapperScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  String _getActionForTrigger(String trigger) {
+    switch (trigger) {
+      case 'double_press':
+        return _doublePressAction;
+      case 'triple_press':
+        return _triplePressAction;
+      case 'long_press':
+        return _longPressAction;
+      case 'single_press':
+      default:
+        return _singlePressAction;
+    }
+  }
+
+  String _getTriggerLabel(String trigger) {
+    switch (trigger) {
+      case 'double_press':
+        return 'DOUBLE PRESS';
+      case 'triple_press':
+        return 'TRIPLE PRESS';
+      case 'long_press':
+        return 'LONG PRESS';
+      case 'single_press':
+      default:
+        return 'SINGLE PRESS';
+    }
+  }
+
+  Widget _buildOverlayPositionCard() {
+    final previewActionId = _getActionForTrigger(_previewSelectedTrigger);
+    final previewActionInfo = KeyActions.findById(previewActionId);
+    final previewTriggerLabel = _getTriggerLabel(_previewSelectedTrigger);
+    final isLeft = _overlayPositionSide == 'left';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: selectedColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.dock_rounded,
+                  color: selectedColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'SYSTEM HUD OVERLAY',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        fontFamily: 'ndot',
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'SYSTEM-WIDE • AROUND PHYSICAL KEY',
+                      style: TextStyle(
+                        color: Color(0xFF8E8E93),
+                        fontSize: 9.5,
+                        fontFamily: 'ndot',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Transform.scale(
+                scale: 0.75,
+                child: CupertinoSwitch(
+                  value: _overlayEnabled,
+                  activeTrackColor: selectedColor,
+                  onChanged: (val) async {
+                    HapticFeedback.lightImpact();
+                    setState(() => _overlayEnabled = val);
+                    await _settings.setOverlayEnabled(val);
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Displays an animated Nothing OS HUD pill directly on your screen beside the physical Essential Key, visible everywhere in Android even when the app is closed.',
+            style: TextStyle(
+              color: Color(0xFF9EA0AA),
+              fontSize: 11.5,
+              height: 1.4,
+            ),
+          ),
+          if (_overlayEnabled) ...[
+            const SizedBox(height: 16),
+
+            // Live Nothing OS Pill Interactive Studio
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: appBackgroundColor,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'LIVE PILL PREVIEW STUDIO',
+                        style: TextStyle(
+                          color: selectedColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          fontFamily: 'ndot',
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'HOT RELOADABLE',
+                          style: TextStyle(
+                            color: Color(0xFF8E8E93),
+                            fontSize: 8.5,
+                            fontFamily: 'ndot',
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Trigger Selector Chips for Preview
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildPreviewTriggerChip('single_press', '1X SINGLE'),
+                        const SizedBox(width: 6),
+                        _buildPreviewTriggerChip('double_press', '2X DOUBLE'),
+                        const SizedBox(width: 6),
+                        _buildPreviewTriggerChip('triple_press', '3X TRIPLE'),
+                        const SizedBox(width: 6),
+                        _buildPreviewTriggerChip('long_press', 'HOLD LONG'),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // Interactive Pill Stage (Simulates Bezel Anchor)
+                  GestureDetector(
+                    onTap: () async {
+                      HapticFeedback.mediumImpact();
+                      await _glyph.showSystemHudOverlay(
+                        trigger: previewTriggerLabel,
+                        action: previewActionId,
+                        message: 'OVERLAY POSITION: $_overlayPositionPercent%',
+                      );
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: isLeft
+                            ? MainAxisAlignment.start
+                            : MainAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Left Anchor Bevel Pip
+                          // if (isLeft)
+                          //   Container(
+                          //     width: 3.5,
+                          //     height: 20,
+                          //     margin: const EdgeInsets.only(right: 6),
+                          //     decoration: BoxDecoration(
+                          //       color: selectedColor,
+                          //       borderRadius: BorderRadius.circular(2),
+                          //     ),
+                          //   ),
+
+                          // Main Obsidian Capsule
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: appBackgroundColor,
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Circular Glyph Core Badge
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: CupertinoColors.systemGreen,
+                                    ),
+                                    child: Center(
+                                      child: Icon(
+                                        previewActionInfo.icon,
+                                        color: Colors.black,
+                                        size: 16,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+
+                                  // Text Column
+                                  Flexible(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        // Title Row: Bold white action + status tag
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              previewActionInfo.title,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12.5,
+                                                fontWeight: FontWeight.w600,
+                                                fontFamily: 'ndot',
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          // Right Anchor Bevel Pip
+                          // if (!isLeft)
+                          //   Container(
+                          //     width: 3.5,
+                          //     height: 20,
+                          //     margin: const EdgeInsets.only(left: 6),
+                          //     decoration: BoxDecoration(
+                          //       color: selectedColor,
+                          //       borderRadius: BorderRadius.circular(2),
+                          //       boxShadow: [
+                          //         BoxShadow(
+                          //           color: selectedColor.withValues(alpha: 0.7),
+                          //           blurRadius: 4,
+                          //         ),
+                          //       ],
+                          //     ),
+                          //   ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tap the preview pill to fire the system overlay on your phone.',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.4),
+                      fontSize: 9.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Key Side Selector (Left / Right frame)
+            const Text(
+              'PHYSICAL KEY EDGE',
+              style: TextStyle(
+                color: Color(0xFF8E8E93),
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                fontFamily: 'ndot',
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () async {
+                      HapticFeedback.selectionClick();
+                      setState(() => _overlayPositionSide = 'left');
+                      await _settings.setOverlayPositionSide('left');
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: _overlayPositionSide == 'left'
+                            ? selectedColor.withValues(alpha: 0.2)
+                            : appBackgroundColor,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: _overlayPositionSide == 'left'
+                              ? selectedColor
+                              : Colors.white.withValues(alpha: 0.1),
+                          width: 1,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'LEFT FRAME (3A KEY)',
+                          style: TextStyle(
+                            color: _overlayPositionSide == 'left'
+                                ? Colors.white
+                                : const Color(0xFF8E8E93),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            fontFamily: 'ndot',
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: InkWell(
+                    onTap: () async {
+                      HapticFeedback.selectionClick();
+                      setState(() => _overlayPositionSide = 'right');
+                      await _settings.setOverlayPositionSide('right');
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: _overlayPositionSide == 'right'
+                            ? selectedColor.withValues(alpha: 0.2)
+                            : appBackgroundColor,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: _overlayPositionSide == 'right'
+                              ? selectedColor
+                              : Colors.white.withValues(alpha: 0.1),
+                          width: 1,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'RIGHT FRAME',
+                          style: TextStyle(
+                            color: _overlayPositionSide == 'right'
+                                ? Colors.white
+                                : const Color(0xFF8E8E93),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            fontFamily: 'ndot',
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 14),
+
+            // Vertical Alignment Slider with phone diagram
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'VERTICAL POSITION ALIGNMENT',
+                  style: TextStyle(
+                    color: Color(0xFF8E8E93),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    fontFamily: 'ndot',
+                    letterSpacing: 0.8,
+                  ),
+                ),
+                Text(
+                  '$_overlayPositionPercent% FROM TOP',
+                  style: const TextStyle(
+                    color: selectedColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    fontFamily: 'ndot',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                // Phone frame mini diagram with sliding key indicator
+                Container(
+                  width: 50,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    color: appBackgroundColor,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      width: 1.2,
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      // Screen area
+                      Positioned.fill(
+                        left: 4,
+                        top: 4,
+                        right: 4,
+                        bottom: 4,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                      ),
+                      // Physical button indicator along frame edge
+                      Positioned(
+                        top: 8 + (70 * (_overlayPositionPercent / 100)),
+                        left: _overlayPositionSide == 'left' ? 1 : null,
+                        right: _overlayPositionSide == 'right' ? 1 : null,
+                        child: Container(
+                          width: 3.5,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: selectedColor,
+                            borderRadius: BorderRadius.circular(2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: selectedColor.withValues(alpha: 0.8),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    children: [
+                      SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          activeTrackColor: selectedColor,
+                          inactiveTrackColor: Colors.white.withValues(
+                            alpha: 0.1,
+                          ),
+                          thumbColor: selectedColor,
+                          overlayColor: selectedColor.withValues(alpha: 0.2),
+                          trackHeight: 3.5,
+                          thumbShape: const RoundSliderThumbShape(
+                            enabledThumbRadius: 7,
+                          ),
+                        ),
+                        child: Slider(
+                          value: _overlayPositionPercent.toDouble(),
+                          min: 10,
+                          max: 90,
+                          divisions: 80,
+                          onChanged: (val) {
+                            setState(
+                              () => _overlayPositionPercent = val.round(),
+                            );
+                          },
+                          onChangeEnd: (val) async {
+                            HapticFeedback.selectionClick();
+                            await _settings.setOverlayPositionPercent(
+                              val.round(),
+                            );
+                          },
+                        ),
+                      ),
+                      Text(
+                        'Align with Nothing Phone (3a) Essential Key (approx 40%–50%)',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.4),
+                          fontSize: 9.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            // Duration Slider
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'ON-SCREEN DURATION',
+                  style: TextStyle(
+                    color: Color(0xFF8E8E93),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    fontFamily: 'ndot',
+                    letterSpacing: 0.8,
+                  ),
+                ),
+                Text(
+                  '${(_overlayDurationMs / 1000).toStringAsFixed(1)} SECONDS',
+                  style: const TextStyle(
+                    color: selectedColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    fontFamily: 'ndot',
+                  ),
+                ),
+              ],
+            ),
+            SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                activeTrackColor: selectedColor,
+                inactiveTrackColor: Colors.white.withValues(alpha: 0.1),
+                thumbColor: selectedColor,
+                overlayColor: selectedColor.withValues(alpha: 0.2),
+                trackHeight: 3.5,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+              ),
+              child: Slider(
+                value: _overlayDurationMs.toDouble(),
+                min: 1000,
+                max: 4000,
+                divisions: 15,
+                onChanged: (val) {
+                  setState(() => _overlayDurationMs = val.round());
+                },
+                onChangeEnd: (val) async {
+                  HapticFeedback.selectionClick();
+                  await _settings.setOverlayDurationMs(val.round());
+                },
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            // Live Preview Button
+            SizedBox(
+              width: double.infinity,
+              height: 40,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  HapticFeedback.mediumImpact();
+                  await _glyph.showSystemHudOverlay(
+                    trigger: previewTriggerLabel,
+                    action: previewActionId,
+                    message: 'OVERLAY POSITION: $_overlayPositionPercent%',
+                  );
+                },
+                icon: const Icon(
+                  Icons.visibility_rounded,
+                  size: 16,
+                  color: selectedColor,
+                ),
+                label: const Text(
+                  'PREVIEW HUD ON SCREEN NOW',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    fontFamily: 'ndot',
+                    letterSpacing: 0.8,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(
+                    color: selectedColor.withValues(alpha: 0.6),
+                    width: 1.2,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreviewTriggerChip(String triggerKey, String label) {
+    final isSelected = _previewSelectedTrigger == triggerKey;
+    return InkWell(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        setState(() => _previewSelectedTrigger = triggerKey);
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? selectedColor.withValues(alpha: 0.2)
+              : Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : const Color(0xFF8E8E93),
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            fontFamily: 'ndot',
+          ),
+        ),
       ),
     );
   }
@@ -1377,7 +2071,13 @@ class _ActionPickerSheetState extends State<_ActionPickerSheet> {
   String _selectedCategory = 'All';
   String _searchQuery = '';
 
-  final List<String> _categories = ['All', 'Controls', 'System', 'Panels', 'Tools'];
+  final List<String> _categories = [
+    'All',
+    'Controls',
+    'System',
+    'Panels',
+    'Tools',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -1424,7 +2124,10 @@ class _ActionPickerSheetState extends State<_ActionPickerSheet> {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: selectedColor.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
@@ -1473,14 +2176,21 @@ class _ActionPickerSheetState extends State<_ActionPickerSheet> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.search_rounded, color: Color(0xFF8E8E93), size: 18),
+                  const Icon(
+                    Icons.search_rounded,
+                    color: Color(0xFF8E8E93),
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: TextField(
                       style: const TextStyle(color: Colors.white, fontSize: 13),
                       decoration: const InputDecoration(
                         hintText: 'Search actions...',
-                        hintStyle: TextStyle(color: Color(0xFF6E717B), fontSize: 12),
+                        hintStyle: TextStyle(
+                          color: Color(0xFF6E717B),
+                          fontSize: 12,
+                        ),
                         border: InputBorder.none,
                         isDense: true,
                       ),
@@ -1490,7 +2200,11 @@ class _ActionPickerSheetState extends State<_ActionPickerSheet> {
                   if (_searchQuery.isNotEmpty)
                     GestureDetector(
                       onTap: () => setState(() => _searchQuery = ''),
-                      child: const Icon(Icons.clear_rounded, color: Colors.white54, size: 16),
+                      child: const Icon(
+                        Icons.clear_rounded,
+                        color: Colors.white54,
+                        size: 16,
+                      ),
                     ),
                 ],
               ),
@@ -1516,7 +2230,10 @@ class _ActionPickerSheetState extends State<_ActionPickerSheet> {
                     setState(() => _selectedCategory = cat);
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: isSel ? selectedColor : cardColor,
                       borderRadius: BorderRadius.circular(17),
@@ -1566,7 +2283,9 @@ class _ActionPickerSheetState extends State<_ActionPickerSheet> {
                       color: cardColor,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isSelected ? selectedColor : Colors.white.withValues(alpha: 0.05),
+                        color: isSelected
+                            ? selectedColor
+                            : Colors.white.withValues(alpha: 0.05),
                         width: isSelected ? 1.5 : 1,
                       ),
                     ),
@@ -1596,7 +2315,9 @@ class _ActionPickerSheetState extends State<_ActionPickerSheet> {
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 12.5,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.w600,
                                 ),
                               ),
                               const SizedBox(height: 2),

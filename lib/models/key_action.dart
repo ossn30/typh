@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum KeyTriggerType {
-  singlePress,
-  doublePress,
-  triplePress,
-  longPress,
-}
+enum KeyTriggerType { singlePress, doublePress, triplePress, longPress }
 
 extension KeyTriggerTypeExtension on KeyTriggerType {
   String get id {
@@ -108,7 +103,7 @@ class KeyActions {
     KeyActionInfo(
       type: KeyActionType.torch,
       id: 'torch',
-      title: 'Torch / Flashlight',
+      title: 'Torch',
       description: 'Toggle rear Glyph lighting and flashlight',
       icon: Icons.bolt_rounded,
       category: 'Controls',
@@ -292,4 +287,3 @@ class KeyActions {
     );
   }
 }
-

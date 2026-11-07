@@ -37,6 +37,12 @@ class SettingsService {
   static const String _kLongPressHoldMs =
       'essential_timing_long_press_hold_ms';
 
+  // System HUD Overlay Settings
+  static const String _kOverlayEnabled = 'overlay_enabled';
+  static const String _kOverlayPositionSide = 'overlay_position_side';
+  static const String _kOverlayPositionPercent = 'overlay_position_percent';
+  static const String _kOverlayDurationMs = 'overlay_duration_ms';
+
   /// Whether user has completed the first-time setup screen
   bool get hasCompletedOnboarding =>
       _prefs?.getBool(_kHasCompletedOnboarding) ?? false;
@@ -76,6 +82,10 @@ class SettingsService {
       _kLongPressAction: longPressAction,
       _kMultiPressGapMs: multiPressGapMs,
       _kLongPressHoldMs: longPressHoldMs,
+      _kOverlayEnabled: isOverlayEnabled,
+      _kOverlayPositionSide: overlayPositionSide,
+      _kOverlayPositionPercent: overlayPositionPercent,
+      _kOverlayDurationMs: overlayDurationMs,
     };
   }
 
@@ -278,6 +288,43 @@ class SettingsService {
 
   Future<bool> setLongPressHoldMs(int ms) async {
     final res = await _prefs?.setInt(_kLongPressHoldMs, ms) ?? false;
+    syncToNative();
+    return res;
+  }
+
+  // --- System HUD Overlay Settings ---
+
+  bool get isOverlayEnabled => _prefs?.getBool(_kOverlayEnabled) ?? true;
+
+  Future<bool> setOverlayEnabled(bool value) async {
+    final res = await _prefs?.setBool(_kOverlayEnabled, value) ?? false;
+    syncToNative();
+    return res;
+  }
+
+  String get overlayPositionSide =>
+      _prefs?.getString(_kOverlayPositionSide) ?? 'left';
+
+  Future<bool> setOverlayPositionSide(String side) async {
+    final res = await _prefs?.setString(_kOverlayPositionSide, side) ?? false;
+    syncToNative();
+    return res;
+  }
+
+  int get overlayPositionPercent =>
+      _prefs?.getInt(_kOverlayPositionPercent) ?? 45;
+
+  Future<bool> setOverlayPositionPercent(int percent) async {
+    final res =
+        await _prefs?.setInt(_kOverlayPositionPercent, percent) ?? false;
+    syncToNative();
+    return res;
+  }
+
+  int get overlayDurationMs => _prefs?.getInt(_kOverlayDurationMs) ?? 2000;
+
+  Future<bool> setOverlayDurationMs(int ms) async {
+    final res = await _prefs?.setInt(_kOverlayDurationMs, ms) ?? false;
     syncToNative();
     return res;
   }
